@@ -1,10 +1,28 @@
 import SwiftUI
 import AppKit
 
+extension Notification.Name {
+    static let maltexOpenFileURL = Notification.Name("maltex.openFileURL")
+}
+
 class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         print("[App] Application will terminate, stopping engine...")
         EngineManager.shared.stop()
+    }
+
+    func application(_ sender: NSApplication, openFile filename: String) -> Bool {
+        let url = URL(fileURLWithPath: filename)
+        NotificationCenter.default.post(name: .maltexOpenFileURL, object: url)
+        return true
+    }
+
+    func application(_ application: NSApplication, openFiles filenames: [String]) {
+        for filename in filenames {
+            let url = URL(fileURLWithPath: filename)
+            NotificationCenter.default.post(name: .maltexOpenFileURL, object: url)
+        }
+        application.reply(toOpenOrPrint: .success)
     }
 }
 
@@ -21,6 +39,11 @@ struct MaltexApp: App {
                 .environmentObject(settingsStore)
                 .onOpenURL { url in
                     handleIncomingURL(url)
+                }
+                .onReceive(NotificationCenter.default.publisher(for: .maltexOpenFileURL)) { notification in
+                    if let url = notification.object as? URL {
+                        handleIncomingURL(url)
+                    }
                 }
                 .onWindow { window in
                     guard let window = window else { return }
@@ -39,6 +62,7 @@ struct MaltexApp: App {
         Settings {
             SettingsView()
                 .environmentObject(settingsStore)
+                .environmentObject(taskStore)
         }
 
         MaltexMenuBar(taskStore: taskStore)
@@ -60,7 +84,11 @@ struct MaltexApp: App {
             {
                 downloadURL = queryItem.value ?? downloadURL
             }
-        } else if urlString.hasPrefix("magnet:") || urlString.hasPrefix("thunder:") {
+        } else if urlString.hasPrefix("magnet:")
+            || urlString.hasPrefix("thunder:")
+            || urlString.hasPrefix("http://")
+            || urlString.hasPrefix("https://")
+        {
             downloadURL = urlString
         }
 

@@ -90,8 +90,10 @@ struct TaskDetailView: View {
 
                     // Files section
                     if !task.files.isEmpty {
+                        let filesTitle = String(
+                            format: String(localized: "文件列表 (%@)"), "\(task.files.count)")
                         VStack(alignment: .leading, spacing: 12) {
-                            Text(String(localized: "文件列表 (\(task.files.count))"))
+                            Text(filesTitle)
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                                 .padding(.horizontal)

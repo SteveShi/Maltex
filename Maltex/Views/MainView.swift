@@ -6,80 +6,18 @@ struct MainView: View {
     @State private var isShowingAddTask = false
     @State private var selectedTaskGids: Set<String> = []
     @State private var confirmGid: String? = nil
+    @State private var pendingRevealGid: String? = nil
     @EnvironmentObject var taskStore: TaskStore
     @EnvironmentObject var settings: SettingsStore
 
     var body: some View {
-        NavigationSplitView {
-            List(selection: $selection) {
-                Section("下载状态") {
-                    NavigationLink(value: "all") {
-                        Label("所有任务", systemImage: "tray.2")
-                    }
-                    NavigationLink(value: "downloading") {
-                        Label("正在下载", systemImage: "arrow.down.circle")
-                    }
-                    NavigationLink(value: "waiting") {
-                        Label("等待下载", systemImage: "clock")
-                    }
-                    NavigationLink(value: "paused") {
-                        Label("已暂停", systemImage: "pause.circle")
-                    }
-                    NavigationLink(value: "stopped") {
-                        Label("已停止", systemImage: "stop.circle")
-                    }
-                    NavigationLink(value: "completed") {
-                        Label("已完成", systemImage: "checkmark.circle")
-                    }
-                }
-            }
-            .listStyle(.sidebar)
-            .scrollContentBackground(.hidden)
-        } detail: {
-            ZStack(alignment: .bottom) {
-                if let selection = selection {
-                    TaskListView(
-                        status: selection,
-                        selectedTaskGids: $selectedTaskGids,
-                        isShowingAddTask: $isShowingAddTask
-                    )
-                } else {
-                    ContentUnavailableView(
-                        "请选择一个分类", systemImage: "sidebar.left")
-                }
-
-                // Bottom-up Task Details Popup
-                if selectedTaskGids.count == 1,
-                    let gid = selectedTaskGids.first,
-                    let task = taskStore.tasks.first(where: { $0.gid == gid })
-                {
-
-                    TaskDetailView(task: task) {
-                        withAnimation(.spring()) {
-                            selectedTaskGids.removeAll()
-                        }
-                    }
-                    .frame(height: 400)
-                    .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
-                    .shadow(color: .black.opacity(0.3), radius: 20, x: 0, y: -5)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 20)
-                    .zIndex(10)
-                }
-            }
-        }
+        NavigationSplitView { sidebarView } detail: { detailView }
         .background(VisualEffectView(material: .hudWindow, blendingMode: .behindWindow).ignoresSafeArea())
         .sheet(isPresented: $isShowingAddTask) {
             AddTaskView()
                 .environmentObject(taskStore)
         }
-        .sheet(
-            item: Binding(
-                get: { confirmGid.map { IdentifiableString(id: $0) } },
-                set: { confirmGid = $0?.id }
-            )
-        ) { item in
+        .sheet(item: confirmSheetItemBinding) { item in
             if let task = taskStore.tasks.first(where: { $0.gid == item.id }) {
                 TorrentConfirmView(task: task) { path, selectedIndices in
                     var options = ["dir": path]
@@ -108,17 +46,16 @@ struct MainView: View {
         }
         .onChange(of: taskStore.lastAddedGid) {
             if let gid = taskStore.lastAddedGid {
-                let task = taskStore.tasks.first(where: { $0.gid == gid })
-                let isTorrent = task?.bittorrent != nil
-
                 withAnimation(.spring()) {
-                    if isTorrent && task?.status == .paused {
-                        confirmGid = gid
-                    } else {
-                        selectedTaskGids = [gid]
-                    }
+                    pendingRevealGid = gid
+                    revealAddedTaskIfReady(gid: gid)
                     taskStore.lastAddedGid = nil
                 }
+            }
+        }
+        .onChange(of: taskStore.tasks.map(\.gid)) {
+            if let gid = pendingRevealGid {
+                revealAddedTaskIfReady(gid: gid)
             }
         }
         .onChange(of: selection) {
@@ -127,10 +64,7 @@ struct MainView: View {
             }
         }
         .frame(minWidth: 900, minHeight: 600)
-        .alert("引擎错误", isPresented: Binding(
-            get: { taskStore.lastError != nil },
-            set: { if !$0 { taskStore.lastError = nil } }
-        )) {
+        .alert("引擎错误", isPresented: engineAlertBinding) {
             Button("重试") {
                 taskStore.lastError = nil
                 EngineManager.shared.restart()
@@ -143,6 +77,102 @@ struct MainView: View {
                 Text(error)
             }
         }
+    }
+
+    private var confirmSheetItemBinding: Binding<IdentifiableString?> {
+        Binding(
+            get: { confirmGid.map { IdentifiableString(id: $0) } },
+            set: { confirmGid = $0?.id }
+        )
+    }
+
+    private var engineAlertBinding: Binding<Bool> {
+        Binding(
+            get: { taskStore.lastError != nil },
+            set: { if !$0 { taskStore.lastError = nil } }
+        )
+    }
+
+    @ViewBuilder
+    private var sidebarView: some View {
+        List(selection: $selection) {
+            Section("下载状态") {
+                NavigationLink(value: "all") {
+                    Label("所有任务", systemImage: "tray.2")
+                }
+                NavigationLink(value: "downloading") {
+                    Label("正在下载", systemImage: "arrow.down.circle")
+                }
+                NavigationLink(value: "waiting") {
+                    Label("等待下载", systemImage: "clock")
+                }
+                NavigationLink(value: "paused") {
+                    Label("已暂停", systemImage: "pause.circle")
+                }
+                NavigationLink(value: "stopped") {
+                    Label("已停止", systemImage: "stop.circle")
+                }
+                NavigationLink(value: "completed") {
+                    Label("已完成", systemImage: "checkmark.circle")
+                }
+            }
+        }
+        .listStyle(.sidebar)
+        .scrollContentBackground(.hidden)
+    }
+
+    @ViewBuilder
+    private var detailView: some View {
+        ZStack(alignment: .bottom) {
+            if let selection {
+                TaskListView(
+                    status: selection,
+                    selectedTaskGids: $selectedTaskGids,
+                    isShowingAddTask: $isShowingAddTask
+                )
+            } else {
+                ContentUnavailableView("请选择一个分类", systemImage: "sidebar.left")
+            }
+
+            if let detailTask = selectedDetailTask {
+                TaskDetailView(task: detailTask) {
+                    withAnimation(.spring()) {
+                        selectedTaskGids.removeAll()
+                    }
+                }
+                .frame(height: 400)
+                .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
+                .shadow(color: .black.opacity(0.3), radius: 20, x: 0, y: -5)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .padding(.horizontal, 20)
+                .padding(.bottom, 20)
+                .zIndex(10)
+            }
+        }
+    }
+
+    private var selectedDetailTask: DownloadTask? {
+        guard selectedTaskGids.count == 1,
+            let gid = selectedTaskGids.first
+        else {
+            return nil
+        }
+        return taskStore.tasks.first(where: { $0.gid == gid })
+    }
+
+    private func revealAddedTaskIfReady(gid: String) {
+        guard let task = taskStore.tasks.first(where: { $0.gid == gid }) else { return }
+
+        if task.bittorrent != nil && task.status == .paused {
+            // Wait for metadata/file list so the confirm sheet is usable.
+            guard !task.files.isEmpty else { return }
+            confirmGid = gid
+            pendingRevealGid = nil
+            return
+        }
+
+        selectedTaskGids = [gid]
+        pendingRevealGid = nil
     }
 }
 

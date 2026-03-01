@@ -96,8 +96,10 @@ struct TorrentConfirmView: View {
                     .padding(.horizontal)
 
                     // Files List Header
+                    let filesTitle = String(
+                        format: String(localized: "文件列表 (%@)"), "\(task.files.count)")
                     HStack {
-                        Text(String(localized: "文件列表 (\(task.files.count))"))
+                        Text(filesTitle)
                             .font(.subheadline)
                             .foregroundColor(.secondary)
 

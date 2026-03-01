@@ -1,4 +1,5 @@
 *.ips
 .build/
+.swiftpm/
 *.xcodeproj
 .vscode/

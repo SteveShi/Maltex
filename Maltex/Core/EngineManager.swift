@@ -46,9 +46,14 @@ class EngineManager {
 
         // 2. Locate binary
         let bundleBin = Bundle.main.url(forResource: "aria2c", withExtension: nil)
-        let devBin = URL(
-            fileURLWithPath: "/Users/steve/Documents/GitHub/Maltex/extra/darwin/arm64/engine/aria2c"
-        )
+        let currentDir = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+#if arch(arm64)
+        let archFolder = "arm64"
+#else
+        let archFolder = "x64"
+#endif
+        let devBin = currentDir.appendingPathComponent(
+            "extra/darwin/\(archFolder)/engine/aria2c")
         let binURL = bundleBin ?? devBin
 
         guard FileManager.default.fileExists(atPath: binURL.path) else {

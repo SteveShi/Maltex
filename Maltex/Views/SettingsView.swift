@@ -4,31 +4,48 @@ import AppKit
 
 struct SettingsView: View {
     @EnvironmentObject var settings: SettingsStore
+    private let minWindowWidth: CGFloat = 620
+    private let idealWindowWidth: CGFloat = 700
+    private let maxWindowWidth: CGFloat = 860
+    private let minWindowHeight: CGFloat = 440
+    private let idealWindowHeight: CGFloat = 500
+    private let maxWindowHeight: CGFloat = 560
 
     var body: some View {
         TabView {
             GeneralSettingsView()
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .tabItem {
                     Label("常规", systemImage: "gear")
                 }
 
             EngineSettingsView()
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .tabItem {
                     Label("进阶", systemImage: "cpu")
                 }
 
             ProxySettingsView()
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .tabItem {
                     Label("代理", systemImage: "network")
                 }
 
             BTSettingsView()
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .tabItem {
                     Label("BT 设置", systemImage: "antenna.radiowaves.left.and.right")
                 }
         }
         .padding(20)
-        .frame(minWidth: 600, minHeight: 450)
+        .frame(
+            minWidth: minWindowWidth,
+            idealWidth: idealWindowWidth,
+            maxWidth: maxWindowWidth,
+            minHeight: minWindowHeight,
+            idealHeight: idealWindowHeight,
+            maxHeight: maxWindowHeight
+        )
         .background(VisualEffectView(material: .hudWindow, blendingMode: .behindWindow).ignoresSafeArea())
     }
 }
@@ -99,6 +116,7 @@ struct SettingsSection<Content: View>: View {
 
 struct GeneralSettingsView: View {
     @EnvironmentObject var settings: SettingsStore
+    @EnvironmentObject var taskStore: TaskStore
 
     var body: some View {
         ScrollView {
@@ -195,6 +213,22 @@ struct GeneralSettingsView: View {
                             ))
                         Toggle("启动时自动开始未完成任务", isOn: $settings.autoResumeTasks)
                         Toggle("下载完成后通知", isOn: $settings.notificationEnabled)
+                    }
+                }
+
+                SettingsSection("状态") {
+                    AlignedFormRow(LocalizedStringKey("Aria2连接状态")) {
+                        HStack(spacing: 8) {
+                            Circle()
+                                .fill(taskStore.isConnected ? Color.green : Color.red)
+                                .frame(width: 10, height: 10)
+                            Text(
+                                taskStore.isConnected
+                                    ? String(localized: "连接正常") : String(localized: "连接失败")
+                            )
+                                .font(.system(size: 13))
+                                .foregroundColor(.secondary)
+                        }
                     }
                 }
             }

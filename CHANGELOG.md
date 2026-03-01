@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9] - 2026-03-01
+
+### Added
+- **Aria2 Connection Status**: Added a live Aria2 connection status indicator in the General settings page with green/red dot states.
+- **Torrent File Association**: Improved `.torrent` file association handling with explicit extension mapping and app delegate open-file callbacks.
+
+### Fixed
+- **Torrent Drop Confirmation**: Fixed an issue where dropping `.torrent` files could miss the confirmation popup due to metadata timing race conditions.
+- **HTTP Download Intake**: Fixed HTTP/HTTPS URL intake for both in-app creation and external URL open handling.
+- **Localization Coverage**: Completed missing localization keys and removed newly introduced hardcoded user-facing strings.
+- **Compiler Type-Check Timeout**: Refactored `MainView` into smaller sub-expressions to resolve SwiftUI type-check timeout errors.
+- **Settings Window Jitter**: Fixed settings window size jumping while switching tabs and constrained settings window dimensions below the main window.
+
+### Changed
+- **Version Update**: Bumped app version to `0.9` (`CURRENT_PROJECT_VERSION = 900`).
+- **Engine Dev Binary Fallback**: Replaced user-specific absolute path fallback with architecture-aware relative fallback for `aria2c`.
+
 ## [0.8.3] - 2026-02-13
 
 ### Added

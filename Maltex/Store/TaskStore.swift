@@ -106,7 +106,8 @@ class TaskStore: ObservableObject {
                         {
                             print("[TaskStore] RPC Error: \(error.message)")
                             self?.isConnected = false
-                            self?.lastError = "内核错误: \(error.message)"
+                            self?.lastError = String(
+                                format: String(localized: "内核错误: %@"), error.message)
                         }
                     case .failure(let error):
                         self?.handleTasksResult(.failure(error))
@@ -127,7 +128,8 @@ class TaskStore: ObservableObject {
         case .failure(let error):
             print("[TaskStore] Fetch error: \(error.localizedDescription)")
             isConnected = false
-            lastError = "引擎连接失败: \(error.localizedDescription)"
+            lastError = String(
+                format: String(localized: "引擎连接失败: %@"), error.localizedDescription)
         }
     }
 
@@ -166,10 +168,10 @@ class TaskStore: ObservableObject {
 
     private func sendCompletionNotification(for task: DownloadTask) {
         let content = UNMutableNotificationContent()
-        content.title = "下载完成"
+        content.title = String(localized: "下载完成")
         content.body =
             task.bittorrent?.info?.name ?? task.files.first?.path.components(separatedBy: "/").last
-            ?? "未知文件"
+            ?? String(localized: "未知文件")
         content.sound = .default
 
         let request = UNNotificationRequest(
@@ -190,16 +192,45 @@ class TaskStore: ObservableObject {
 
     // MARK: - Actions
     func addUri(_ uris: [String]) {
-        aria2.call(method: .addUri, params: [AnyEncodable(uris)]).response { [weak self] response in
-            if case .success(let data) = response.result, let data = data {
+        let settings = SettingsStore()
+        var params: [AnyEncodable] = [AnyEncodable(uris)]
+        var options: [String: String] = [:]
+        if !settings.downloadPath.isEmpty {
+            options["dir"] = settings.downloadPath
+        }
+        if !options.isEmpty {
+            params.append(AnyEncodable(options))
+        }
+
+        aria2.call(method: .addUri, params: params).response { [weak self] response in
+            switch response.result {
+            case .success(let data):
+                guard let data else { return }
                 if let rpcResponse = try? JSONDecoder().decode(
                     Aria2Response<String>.self, from: data),
                     let gid = rpcResponse.result
                 {
                     Task { @MainActor in
                         self?.lastAddedGid = gid
+                        self?.lastError = nil
                         self?.fetchTasks()
                     }
+                    return
+                }
+
+                if let rpcResponse = try? JSONDecoder().decode(
+                    Aria2Response<AnyCodable>.self, from: data),
+                    let error = rpcResponse.error
+                {
+                    Task { @MainActor in
+                        self?.lastError = String(
+                            format: String(localized: "添加下载失败: %@"), error.message)
+                    }
+                }
+            case .failure(let error):
+                Task { @MainActor in
+                    self?.lastError = String(
+                        format: String(localized: "添加下载失败: %@"), error.localizedDescription)
                 }
             }
         }
