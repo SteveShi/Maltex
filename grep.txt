@@ -1,0 +1,76 @@
+Maltex/Models/DownloadTask.swift:85:            case .active: return String(localized: "正在下载")
+Maltex/Models/DownloadTask.swift:86:            case .waiting: return String(localized: "等待下载")
+Maltex/Models/DownloadTask.swift:87:            case .paused: return String(localized: "已暂停")
+Maltex/Models/DownloadTask.swift:88:            case .error: return String(localized: "错误")
+Maltex/Models/DownloadTask.swift:89:            case .complete: return String(localized: "已完成")
+Maltex/Models/DownloadTask.swift:90:            case .removed: return String(localized: "已移除")
+Maltex/Views/TaskListView.swift:38:                    String(localized: "暂无任务"),
+Maltex/Views/TaskListView.swift:40:                    description: Text("点击上方 '+' 按钮或拖入链接开始下载")
+Maltex/Views/TaskListView.swift:57:                                            ? String(localized: "暂停") : String(localized: "开始"),
+Maltex/Views/TaskListView.swift:65:                                    Label(String(localized: "停止"), systemImage: "stop.fill")
+Maltex/Views/TaskListView.swift:73:                                    Label(String(localized: "删除"), systemImage: "trash.fill")
+Maltex/Views/TaskListView.swift:97:                        isAllSelected ? String(localized: "取消全选") : String(localized: "全选"),
+Maltex/Views/TaskListView.swift:101:                .help(String(localized: "全选 / 取消全选"))
+Maltex/Views/TaskListView.swift:104:                    Label(String(localized: "开始"), systemImage: "play.fill")
+Maltex/Views/TaskListView.swift:107:                .help(String(localized: "开始任务"))
+Maltex/Views/TaskListView.swift:110:                    Label(String(localized: "暂停"), systemImage: "pause.fill")
+Maltex/Views/TaskListView.swift:113:                .help(String(localized: "暂停任务"))
+Maltex/Views/TaskListView.swift:116:                    Label(String(localized: "停止"), systemImage: "stop.fill")
+Maltex/Views/TaskListView.swift:119:                .help(String(localized: "停止任务"))
+Maltex/Views/TaskListView.swift:125:                    Label(String(localized: "删除"), systemImage: "trash.fill")
+Maltex/Views/TaskListView.swift:128:                .help(String(localized: "删除任务"))
+Maltex/Views/TaskListView.swift:131:                    Label(String(localized: "新建任务"), systemImage: "plus")
+Maltex/Views/TaskListView.swift:133:                .help(String(localized: "创建新下载任务"))
+Maltex/Views/TaskListView.swift:136:                    Label(String(localized: "刷新"), systemImage: "arrow.clockwise")
+Maltex/Views/TaskListView.swift:138:                .help(String(localized: "刷新列表"))
+Maltex/Views/TaskListView.swift:157:                    ).last ?? String(localized: "未知文件")
+Maltex/Views/AddTaskView.swift:13:            Text("新建下载任务")
+Maltex/Views/AddTaskView.swift:19:                Text("输入下载链接 (HTTP/HTTPS/Magnet)")
+Maltex/Views/AddTaskView.swift:38:                            ? String(localized: "选择种子文件...") : String(localized: "更改种子文件"),
+Maltex/Views/SettingsView.swift:19:                    Label("常规", systemImage: "gear")
+Maltex/Views/SettingsView.swift:25:                    Label("进阶", systemImage: "cpu")
+Maltex/Views/SettingsView.swift:31:                    Label("代理", systemImage: "network")
+Maltex/Views/SettingsView.swift:37:                    Label("BT 设置", systemImage: "antenna.radiowaves.left.and.right")
+Maltex/Views/SettingsView.swift:124:                SettingsSection("下载目录") {
+Maltex/Views/SettingsView.swift:144:                SettingsSection("预设") {
+Maltex/Views/SettingsView.swift:168:                SettingsSection("速度限制") {
+Maltex/Views/SettingsView.swift:174:                            Text("KB/s")
+Maltex/Views/SettingsView.swift:184:                            Text("KB/s")
+Maltex/Views/SettingsView.swift:191:                SettingsSection("基础设置") {
+Maltex/Views/SettingsView.swift:219:                SettingsSection("状态") {
+Maltex/Views/SettingsView.swift:227:                                    ? String(localized: "连接正常") : String(localized: "连接失败")
+Maltex/Views/SettingsView.swift:246:                SettingsSection("RPC 服务") {
+Maltex/Views/SettingsView.swift:259:                SettingsSection("进阶网络") {
+Maltex/Views/SettingsView.swift:278:                SettingsSection("代理服务") {
+Maltex/Views/SettingsView.swift:288:                    SettingsSection("配置详情") {
+Maltex/Views/SettingsView.swift:300:                    SettingsSection("身份验证") {
+Maltex/Views/SettingsView.swift:324:                SettingsSection("节点与端口") {
+Maltex/Views/SettingsView.swift:341:                SettingsSection("Tracker 服务器") {
+Maltex/Views/SettingsView.swift:351:                        Text("每行输入一个 Tracker 地址")
+Maltex/Views/SettingsView.swift:358:                SettingsSection("进阶设置") {
+Maltex/Views/TorrentConfirmView.swift:41:                Text("确认下载种子")
+Maltex/Views/TorrentConfirmView.swift:60:                            Text(task.bittorrent?.info?.name ?? String(localized: "未知种子"))
+Maltex/Views/TorrentConfirmView.swift:66:                                String(localized: "总大小: ") + ByteCountFormatterUtil.string(fromByteCount: task.totalLength)
+Maltex/Views/TorrentConfirmView.swift:77:                        Text("下载路径")
+Maltex/Views/TorrentConfirmView.swift:100:                        format: String(localized: "文件列表 (%@)"), "\(task.files.count)")
+Maltex/Views/TorrentConfirmView.swift:117:                                ? String(localized: "取消全选") : String(localized: "全选")
+Maltex/Views/TorrentConfirmView.swift:144:                    Text("请至少选择一个文件")
+Maltex/Views/MenuBarExtra.swift:21:                            Text(task.bittorrent?.info?.name ?? task.files.first?.path ?? String(localized: "未知任务"))
+Maltex/Views/TaskDetailView.swift:13:                Text("任务详情")
+Maltex/Views/TaskDetailView.swift:58:                        Text("任务统计")
+Maltex/Views/TaskDetailView.swift:94:                            format: String(localized: "文件列表 (%@)"), "\(task.files.count)")
+Maltex/Views/TaskDetailView.swift:119:                                            Text("/")
+Maltex/Views/MainView.swift:95:            Section("下载状态") {
+Maltex/Views/MainView.swift:97:                    Label("所有任务", systemImage: "tray.2")
+Maltex/Views/MainView.swift:100:                    Label("正在下载", systemImage: "arrow.down.circle")
+Maltex/Views/MainView.swift:103:                    Label("等待下载", systemImage: "clock")
+Maltex/Views/MainView.swift:106:                    Label("已暂停", systemImage: "pause.circle")
+Maltex/Views/MainView.swift:109:                    Label("已停止", systemImage: "stop.circle")
+Maltex/Views/MainView.swift:112:                    Label("已完成", systemImage: "checkmark.circle")
+Maltex/Store/TaskStore.swift:116:                                self.lastError = String(localized: "引擎连接失败: 无法获取任务列表")
+Maltex/Store/TaskStore.swift:154:                                format: String(localized: "内核错误: %@"), error.message)
+Maltex/Store/TaskStore.swift:176:                format: String(localized: "引擎连接失败: %@"), error.localizedDescription)
+Maltex/Store/TaskStore.swift:215:        content.title = String(localized: "下载完成")
+Maltex/Store/TaskStore.swift:218:            ?? String(localized: "未知文件")
+Maltex/Store/TaskStore.swift:274:                                format: String(localized: "添加下载失败: %@"), error.message)
+Maltex/Store/TaskStore.swift:280:                            format: String(localized: "添加下载失败: %@"), error.localizedDescription)

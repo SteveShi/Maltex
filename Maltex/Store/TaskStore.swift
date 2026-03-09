@@ -1,6 +1,6 @@
 import Alamofire
 import AnyCodable
-import Aria2Kit
+@preconcurrency import Aria2Kit
 import Combine
 import Foundation
 import SwiftUI
@@ -70,32 +70,76 @@ class TaskStore: ObservableObject {
         }
     }
 
+    // MARK: - Aggregated Fetch (防闪烁)
+    // 缓存三个 RPC 查询的结果，全部完成后一次性更新 tasks
+    private nonisolated(unsafe) var pendingFetchResults: [[DownloadTask]] = [[], [], []]
+    private nonisolated(unsafe) var pendingFetchCount = 0
+    private nonisolated(unsafe) var isFetching = false
+
     func fetchTasks() {
-        performCall(method: .tellActive, params: [])
-        performCall(method: .tellWaiting, params: [AnyEncodable(0), AnyEncodable(100)])
-        performCall(method: .tellStopped, params: [AnyEncodable(0), AnyEncodable(100)])
+        guard !isFetching else { return }
+        isFetching = true
+        pendingFetchResults = [[], [], []]
+        pendingFetchCount = 0
+
+        // 0: tellActive, 1: tellWaiting, 2: tellStopped
+        fetchCategory(method: .tellActive, params: [], index: 0)
+        fetchCategory(method: .tellWaiting, params: [AnyEncodable(0), AnyEncodable(100)], index: 1)
+        fetchCategory(method: .tellStopped, params: [AnyEncodable(0), AnyEncodable(100)], index: 2)
     }
 
-    private func performCall(method: Aria2Method, params: [AnyEncodable]) {
+    private func fetchCategory(method: Aria2Method, params: [AnyEncodable], index: Int) {
+        aria2.call(method: method, params: params)
+            .response { [weak self] response in
+                Task { @MainActor in
+                    guard let self else { return }
+                    switch response.result {
+                    case .success(let data):
+                        if let data = data,
+                            let rpcResponse = try? JSONDecoder().decode(
+                                Aria2Response<[DownloadTask]>.self, from: data),
+                            let fetchedTasks = rpcResponse.result
+                        {
+                            self.pendingFetchResults[index] = fetchedTasks
+                        }
+                    case .failure(let error):
+                        print("[TaskStore] Fetch error (\(method.rawValue)): \(error.localizedDescription)")
+                    }
+
+                    self.pendingFetchCount += 1
+                    if self.pendingFetchCount >= 3 {
+                        // 三个请求全部完成，合并所有结果后统一更新
+                        let allTasks = self.pendingFetchResults.flatMap { $0 }
+                        if allTasks.isEmpty && self.pendingFetchResults.allSatisfy({ $0.isEmpty }) {
+                            // 如果全部为空且从未连接成功，可能是连接失败
+                            if !self.isConnected {
+                                self.lastError = String(localized: "引擎连接失败: 无法获取任务列表")
+                            }
+                        }
+                        self.handleTasksResult(.success(allTasks))
+                        self.isFetching = false
+                    }
+                }
+            }
+    }
+
+    /// 单独执行一个 RPC 调用并处理简单的 GID 返回（用于 addUri/addTorrent 等操作）
+    private func performActionCall(method: Aria2Method, params: [AnyEncodable],
+                                    onGid: (@Sendable (String) -> Void)? = nil) {
         aria2.call(method: method, params: params)
             .response { [weak self] response in
                 Task { @MainActor in
                     switch response.result {
                     case .success(let data):
                         guard let data = data else { return }
-                        // Multi-way decoding based on expected method result
                         if let rpcResponse = try? JSONDecoder().decode(
-                            Aria2Response<[DownloadTask]>.self, from: data),
-                            let fetchedTasks = rpcResponse.result
-                        {
-                            self?.handleTasksResult(.success(fetchedTasks))
-                        } else if let rpcResponse = try? JSONDecoder().decode(
                             Aria2Response<String>.self, from: data),
                             let gid = rpcResponse.result
                         {
                             print("[TaskStore] Action success for GID: \(gid)")
                             self?.isConnected = true
                             self?.lastError = nil
+                            onGid?(gid)
                             // Small delay before fetching to allow engine state transition
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                                 self?.fetchTasks()
@@ -193,44 +237,48 @@ class TaskStore: ObservableObject {
     // MARK: - Actions
     func addUri(_ uris: [String]) {
         let settings = SettingsStore()
-        var params: [AnyEncodable] = [AnyEncodable(uris)]
         var options: [String: String] = [:]
         if !settings.downloadPath.isEmpty {
             options["dir"] = settings.downloadPath
         }
-        if !options.isEmpty {
-            params.append(AnyEncodable(options))
-        }
 
-        aria2.call(method: .addUri, params: params).response { [weak self] response in
-            switch response.result {
-            case .success(let data):
-                guard let data else { return }
-                if let rpcResponse = try? JSONDecoder().decode(
-                    Aria2Response<String>.self, from: data),
-                    let gid = rpcResponse.result
-                {
-                    Task { @MainActor in
-                        self?.lastAddedGid = gid
-                        self?.lastError = nil
-                        self?.fetchTasks()
+        // 每个 URL 独立发送 addUri 请求（aria2 的 addUri 参数数组是单个下载的镜像列表，不是多个独立下载）
+        for uri in uris {
+            var params: [AnyEncodable] = [AnyEncodable([uri])]
+            if !options.isEmpty {
+                params.append(AnyEncodable(options))
+            }
+
+            aria2.call(method: .addUri, params: params).response { [weak self] response in
+                switch response.result {
+                case .success(let data):
+                    guard let data else { return }
+                    if let rpcResponse = try? JSONDecoder().decode(
+                        Aria2Response<String>.self, from: data),
+                        let gid = rpcResponse.result
+                    {
+                        Task { @MainActor in
+                            self?.lastAddedGid = gid
+                            self?.lastError = nil
+                            self?.fetchTasks()
+                        }
+                        return
                     }
-                    return
-                }
 
-                if let rpcResponse = try? JSONDecoder().decode(
-                    Aria2Response<AnyCodable>.self, from: data),
-                    let error = rpcResponse.error
-                {
+                    if let rpcResponse = try? JSONDecoder().decode(
+                        Aria2Response<AnyCodable>.self, from: data),
+                        let error = rpcResponse.error
+                    {
+                        Task { @MainActor in
+                            self?.lastError = String(
+                                format: String(localized: "添加下载失败: %@"), error.message)
+                        }
+                    }
+                case .failure(let error):
                     Task { @MainActor in
                         self?.lastError = String(
-                            format: String(localized: "添加下载失败: %@"), error.message)
+                            format: String(localized: "添加下载失败: %@"), error.localizedDescription)
                     }
-                }
-            case .failure(let error):
-                Task { @MainActor in
-                    self?.lastError = String(
-                        format: String(localized: "添加下载失败: %@"), error.localizedDescription)
                 }
             }
         }

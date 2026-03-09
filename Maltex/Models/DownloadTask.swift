@@ -1,6 +1,6 @@
 import Foundation
 
-struct DownloadTask: Identifiable, Codable {
+struct DownloadTask: Identifiable, Codable, Hashable {
     var gid: String
     var status: TaskStatus
     var totalLength: Int64
@@ -19,6 +19,15 @@ struct DownloadTask: Identifiable, Codable {
     var bittorrent: BittorrentInfo?
 
     var id: String { gid }
+
+    // Hashable/Equatable based on gid (unique task identifier)
+    static func == (lhs: DownloadTask, rhs: DownloadTask) -> Bool {
+        lhs.gid == rhs.gid
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(gid)
+    }
 
     enum CodingKeys: String, CodingKey {
         case gid, status, totalLength, completedLength, uploadLength
@@ -84,7 +93,7 @@ struct DownloadTask: Identifiable, Codable {
     }
 }
 
-struct DownloadFile: Codable {
+struct DownloadFile: Codable, Hashable {
     let index: String
     let path: String
     let length: Int64
@@ -117,12 +126,12 @@ struct DownloadFile: Codable {
     }
 }
 
-struct DownloadURI: Codable {
+struct DownloadURI: Codable, Hashable {
     let uri: String
     let status: String
 }
 
-struct BittorrentInfo: Codable {
+struct BittorrentInfo: Codable, Hashable {
     let announceList: [[String]]?
     let comment: String?
     let creationDate: Int64?
@@ -130,6 +139,6 @@ struct BittorrentInfo: Codable {
     let info: BittorrentDetail?
 }
 
-struct BittorrentDetail: Codable {
+struct BittorrentDetail: Codable, Hashable {
     let name: String?
 }

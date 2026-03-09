@@ -3,3 +3,15 @@
 .swiftpm/
 *.xcodeproj
 .vscode/
+/.agents
+.agents/skills/swiftui-expert-skill/SKILL.md
+.agents/skills/swiftui-expert-skill/references/view-structure.md
+.agents/skills/swiftui-expert-skill/references/state-management.md
+.agents/skills/swiftui-expert-skill/references/performance-patterns.md
+.agents/skills/swiftui-expert-skill/references/liquid-glass.md
+.agents/skills/swiftui-expert-skill/references/latest-apis.md
+.agents/skills/swiftui-expert-skill/references/animation-advanced.md
+.agents/
+.agent/
+_agents/
+skills/

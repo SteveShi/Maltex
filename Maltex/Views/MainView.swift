@@ -1,11 +1,12 @@
 import SwiftUI
 import AppKit
+import UniformTypeIdentifiers
 
 struct MainView: View {
     @State private var selection: String? = "downloading"
     @State private var isShowingAddTask = false
     @State private var selectedTaskGids: Set<String> = []
-    @State private var confirmGid: String? = nil
+    @State private var confirmTask: DownloadTask? = nil
     @State private var pendingRevealGid: String? = nil
     @EnvironmentObject var taskStore: TaskStore
     @EnvironmentObject var settings: SettingsStore
@@ -17,32 +18,33 @@ struct MainView: View {
             AddTaskView()
                 .environmentObject(taskStore)
         }
-        .sheet(item: confirmSheetItemBinding) { item in
-            if let task = taskStore.tasks.first(where: { $0.gid == item.id }) {
-                TorrentConfirmView(task: task) { path, selectedIndices in
-                    var options = ["dir": path]
-                    if !selectedIndices.isEmpty {
-                        // Sort numerically: "1", "2", "10" -> 1, 2, 10
-                        let sortedIndices = selectedIndices.compactMap { Int($0) }.sorted()
-                        let indexString = sortedIndices.map { String($0) }.joined(separator: ",")
-                        options["select-file"] = indexString
-                    }
-                    taskStore.resumeTask(gid: item.id, options: options)
-                    confirmGid = nil
-                } onCancel: {
-                    taskStore.removeTasks(gids: [item.id])
-                    confirmGid = nil
+        .sheet(item: $confirmTask) { snapshotTask in
+            TorrentConfirmView(task: snapshotTask) { path, selectedIndices in
+                var options = ["dir": path]
+                if !selectedIndices.isEmpty {
+                    let sortedIndices = selectedIndices.compactMap { Int($0) }.sorted()
+                    let indexString = sortedIndices.map { String($0) }.joined(separator: ",")
+                    options["select-file"] = indexString
                 }
-                .environmentObject(taskStore)
-                .environmentObject(settings)
+                taskStore.resumeTask(gid: snapshotTask.gid, options: options)
+                confirmTask = nil
+            } onCancel: {
+                taskStore.removeTasks(gids: [snapshotTask.gid])
+                confirmTask = nil
             }
+            .environmentObject(taskStore)
+            .environmentObject(settings)
         }
-        .dropDestination(for: URL.self) { items, location in
-            let torrents = items.filter { $0.pathExtension.lowercased() == "torrent" }
-            for torrent in torrents {
-                taskStore.addTorrent(at: torrent.path)
+        .onDrop(of: [.fileURL], isTargeted: nil) { providers in
+            for provider in providers {
+                _ = provider.loadObject(ofClass: URL.self) { url, _ in
+                    guard let url = url, url.pathExtension.lowercased() == "torrent" else { return }
+                    Task { @MainActor in
+                        taskStore.addTorrent(at: url.path)
+                    }
+                }
             }
-            return !torrents.isEmpty
+            return true
         }
         .onChange(of: taskStore.lastAddedGid) {
             if let gid = taskStore.lastAddedGid {
@@ -79,12 +81,6 @@ struct MainView: View {
         }
     }
 
-    private var confirmSheetItemBinding: Binding<IdentifiableString?> {
-        Binding(
-            get: { confirmGid.map { IdentifiableString(id: $0) } },
-            set: { confirmGid = $0?.id }
-        )
-    }
 
     private var engineAlertBinding: Binding<Bool> {
         Binding(
@@ -166,7 +162,7 @@ struct MainView: View {
         if task.bittorrent != nil && task.status == .paused {
             // Wait for metadata/file list so the confirm sheet is usable.
             guard !task.files.isEmpty else { return }
-            confirmGid = gid
+            confirmTask = task
             pendingRevealGid = nil
             return
         }
@@ -176,9 +172,7 @@ struct MainView: View {
     }
 }
 
-struct IdentifiableString: Identifiable {
-    let id: String
-}
+
 
 struct VisualEffectView: NSViewRepresentable {
     let material: NSVisualEffectView.Material

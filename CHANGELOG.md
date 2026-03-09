@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.1] - 2026-03-09
+
+### Added
+- **File Association & Drag/Drop**: Implemented reliable `.torrent` file drag-and-drop support into the main window and registered Maltex as a default application for `.torrent` files in macOS.
+- **Dedicated Torrent Icon**: Added a professional `.icns` file icon specifically for `.torrent` files associated with Maltex.
+- **Automated Testing Suite**: Implemented comprehensive unit tests covering JSON serialization, `DownloadTask` status enums, local storage validation, and byte formatters.
+
+### Fixed
+- **Task List Flickering**: Removed severe visual flickering in the main UI by consolidating Aria2 HTTP RPC polls into a single batched result, updating the view only once per cycle.
+- **Torrent Dialogue Disappearing**: Resolved a bug where the Torrent confirmation dialogue would turn grey and reset itself on every task refresh cycle by injecting stable snapshot states.
+- **HTTP Multi-Download Support**: Fixed the `addUri` method passing multiple URLs as a single Aria2 mirror string; URLs are now iterated and sent as independent downloads.
+- **Localization Patches**: Dynamically extracted and translated missing Chinese strings for the UI and backend errors across the app.
+
 ## [0.9] - 2026-03-01
 
 ### Added
