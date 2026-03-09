@@ -22,6 +22,8 @@ targets:
     deploymentTarget: "14.0"
     sources:
       - path: Maltex
+      - path: Maltex/Resources
+        buildPhase: resources
       - path: extra/darwin/arm64/engine/aria2c
         type: file
         buildPhase: resources
