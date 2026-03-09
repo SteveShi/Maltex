@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "zh-Hans",
   "strings" : {
+    "BitTorrent Document" : {
+
+    },
     "CFBundleDisplayName" : {
       "extractionState" : "manual",
       "localizations" : {
