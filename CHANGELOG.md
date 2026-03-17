@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.2] - 2026-03-18
+
+### Fixed
+- **Download Data Staleness**: Resolved an issue where the download list would show 0 KB or stale progress. Improved `DownloadTask` equality tracking to trigger UI updates on progress changes.
+- **Task Merging & Duplication**: Overhauled the RPC background merging logic to prevent GID collisions and ensure consistent state between the list and detail views.
+- **HTTP Filename Parsing**: Enabled `content-disposition` support in the engine and implemented a smart filename extraction fallback in the UI to filter out random hex strings/GIDs.
+
 ## [0.9.1] - 2026-03-09
 
 ### Added
