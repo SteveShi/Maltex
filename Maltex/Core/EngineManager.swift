@@ -78,6 +78,7 @@ class EngineManager {
             "--max-connection-per-server=\(settings.maxConnectionPerServer)",
             "--split=\(settings.maxConnectionPerServer)",
             "--disable-ipv6=true", // Avoid IPv6 bind errors
+            "--content-disposition-default-utf8=true",
         ]
 
         // Only add session support if the file exists and is not empty

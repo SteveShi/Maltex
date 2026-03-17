@@ -20,9 +20,17 @@ struct DownloadTask: Identifiable, Codable, Hashable {
 
     var id: String { gid }
 
-    // Hashable/Equatable based on gid (unique task identifier)
+    // Hashable/Equatable based on gid and key progress fields to ensure UI refresh
     static func == (lhs: DownloadTask, rhs: DownloadTask) -> Bool {
-        lhs.gid == rhs.gid
+        lhs.gid == rhs.gid &&
+        lhs.status == rhs.status &&
+        lhs.totalLength == rhs.totalLength &&
+        lhs.completedLength == rhs.completedLength &&
+        lhs.downloadSpeed == rhs.downloadSpeed &&
+        lhs.uploadSpeed == rhs.uploadSpeed &&
+        lhs.numSeeders == rhs.numSeeders &&
+        lhs.files.count == rhs.files.count &&
+        lhs.bittorrent?.info?.name == rhs.bittorrent?.info?.name
     }
 
     func hash(into hasher: inout Hasher) {

@@ -151,18 +151,14 @@ struct TaskRow: View {
                 .foregroundColor(statusColor)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(
-                    task.bittorrent?.info?.name ?? task.files.first?.path.components(
-                        separatedBy: "/"
-                    ).last ?? String(localized: "未知文件")
-                )
-                .font(.headline)
-                .lineLimit(1)
+                Text(displayName)
+                    .font(.headline)
+                    .lineLimit(1)
 
                 ProgressView(value: Double(task.completedLength), total: Double(task.totalLength))
                     .progressViewStyle(.linear)
                     .tint(statusColor)
-
+                
                 HStack {
                     Text(formatBytes(task.completedLength) + " / " + formatBytes(task.totalLength))
                     Spacer()
@@ -175,21 +171,47 @@ struct TaskRow: View {
         .padding(.vertical, 4)
     }
 
+    private var displayName: String {
+        // 1. BitTorrent name
+        if let btName = task.bittorrent?.info?.name, !btName.isEmpty {
+            return btName
+        }
+        
+        // 2. File path (fallback from Aria2)
+        if let path = task.files.first?.path, !path.isEmpty {
+            let lastComponent = path.components(separatedBy: "/").last ?? ""
+            // Match common hex IDs: 16 (GID), 40 (SHA-1), 64 (SHA-256)
+            let isHexId = lastComponent.range(of: "^[0-9a-fA-F]{16}$|^[0-9a-fA-F]{40}$|^[0-9a-fA-F]{64}$", options: .regularExpression) != nil
+            
+            if !isHexId {
+                return lastComponent
+            }
+        }
+        
+        // 3. Extract from first URI
+        if let uri = task.files.first?.uris.first?.uri,
+           let decodedUri = uri.removingPercentEncoding,
+           let basePart = decodedUri.components(separatedBy: "?").first?.components(separatedBy: "#").first,
+           let lastComponent = basePart.components(separatedBy: "/").last,
+           !lastComponent.isEmpty {
+            return lastComponent
+        }
+        
+        return String(localized: "未知文件")
+    }
+
     private var statusColor: Color {
         switch task.status {
-        case .active: return .accentColor  // Downloading: Blue (System Accent)
-        case .waiting: return .orange  // Waiting: Orange
-        case .paused: return .gray  // Paused: Gray
-        case .complete: return .green  // Component: Green
-        case .error: return .red  // Error/Stopped: Red
+        case .active: return .accentColor
+        case .waiting: return .orange
+        case .paused: return .gray
+        case .complete: return .green
+        case .error: return .red
         case .removed: return .secondary
         }
     }
 
     private func formatBytes(_ bytes: Int64) -> String {
-        let formatter = ByteCountFormatter()
-        formatter.allowedUnits = [.useAll]
-        formatter.countStyle = .file
-        return formatter.string(fromByteCount: bytes)
+        ByteCountFormatterUtil.string(fromByteCount: bytes)
     }
 }

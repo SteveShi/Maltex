@@ -179,9 +179,23 @@ class TaskStore: ObservableObject {
 
     private func mergeTasks(_ newTasks: [DownloadTask]) {
         let settings = SettingsStore()
+        
+        // 1. Unique engine tasks by GID, prefer those with non-zero length
+        var engineTasksMap: [String: DownloadTask] = [:]
+        for task in newTasks {
+            if let existing = engineTasksMap[task.gid] {
+                if task.totalLength >= existing.totalLength {
+                    engineTasksMap[task.gid] = task
+                }
+            } else {
+                engineTasksMap[task.gid] = task
+            }
+        }
+
+        let currentEngineTasks = Array(engineTasksMap.values)
         let oldTasksMap = self.tasks.reduce(into: [String: DownloadTask]()) { $0[$1.gid] = $1 }
 
-        for task in newTasks {
+        for task in currentEngineTasks {
             if let oldTask = oldTasksMap[task.gid] {
                 // Status transition: active -> complete
                 if oldTask.status != .complete && task.status == .complete {
@@ -194,15 +208,13 @@ class TaskStore: ObservableObject {
             }
         }
 
-        // Merge logic:
-        // 1. Start with engine tasks
-        // 2. Add history tasks that are NOT in engine
-        let engineGids = Set(newTasks.map { $0.gid })
+        // 2. Merge history tasks that are NOT in engine
+        let engineGids = Set(engineTasksMap.keys)
         let historyTasksNotInEngine = historyStore.archivedTasks.filter {
             !engineGids.contains($0.gid)
         }
 
-        var finalTasks = newTasks
+        var finalTasks = currentEngineTasks
         finalTasks.append(contentsOf: historyTasksNotInEngine)
 
         self.tasks = finalTasks.sorted {
