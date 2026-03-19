@@ -23,7 +23,7 @@ jobs:
           brew install create-dmg
 
       - name: Set up Xcode
-        uses: maxim-lobanov/setup-xcode@v1
+        uses: lpgneg19/setup-xcode@v2
         with:
           xcode-version: 'latest-stable'
 
