@@ -28,6 +28,13 @@ Maltex is a native rewrite of the popular [Motrix](https://motrix.app) download 
 
 Maltex is currently in active development. You can build it from source to try the latest features.
 
+### Homebrew
+You can install Maltex via Homebrew tap:
+```bash
+brew tap lpgneg19/tap
+brew install --cask maltex
+```
+
 ### Prerequisites
 - macOS 14.0+
 - Xcode 15.0+
