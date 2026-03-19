@@ -168,3 +168,23 @@ jobs:
             Maltex-*-arm64.dmg
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update Homebrew Cask
+        env:
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          VERSION="${{ env.VERSION }}"
+          DMG_NAME="Maltex-${VERSION}-Universal.dmg"
+          SHA256=$(shasum -a 256 "$DMG_NAME" | awk '{print $1}')
+          
+          git clone https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/lpgneg19/homebrew-tap.git tap-repo
+          cd tap-repo
+          
+          sed -i '' "s/version \".*\"/version \"$VERSION\"/" Casks/maltex.rb
+          sed -i '' "s/sha256 \".*\"/sha256 \"$SHA256\"/" Casks/maltex.rb
+          
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Casks/maltex.rb
+          git commit -m "Update maltex to $VERSION"
+          git push
