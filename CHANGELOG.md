@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.0] - 2026-03-29
+
+### Added
+- **Sparkle Update Support**: Integrated Sparkle framework for seamless in-app updates.
+- **Auto-Update Checks**: Added automatic update checking and a "Check for Updates..." menu item.
+- **Version 1.0.0**: Officially bumped the version to 1.0.0.
+
+### Chinese
+### 新增
+- **Sparkle 更新支持**: 集成了 Sparkle 框架，支持应用内无缝更新。
+- **自动检查更新**: 添加了自动检查更新功能，并在菜单栏中新增了“检查更新...”选项。
+- **版本 1.0.0**: 正式将版本号提升至 1.0.0。
+
 ## [0.9.2] - 2026-03-18
 
 ### Fixed

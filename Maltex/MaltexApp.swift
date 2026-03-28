@@ -31,6 +31,7 @@ struct MaltexApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var taskStore = TaskStore()
     @StateObject private var settingsStore = SettingsStore()
+    @StateObject private var updater = Updater()
 
     var body: some Scene {
         WindowGroup {
@@ -57,6 +58,12 @@ struct MaltexApp: App {
         .windowToolbarStyle(.unified)
         .commands {
             SidebarCommands()
+            CommandGroup(after: .appInfo) {
+                Button(LocalizedStringKey("Check for Updates...")) {
+                    updater.checkForUpdates()
+                }
+                .disabled(!updater.canCheckForUpdates)
+            }
         }
 
         Settings {

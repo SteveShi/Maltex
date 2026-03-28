@@ -1,14 +1,55 @@
-name: Build and Release macOS App
+name: Build and Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
+    paths:
+      - 'CHANGELOG.md'
   workflow_dispatch:
 
 jobs:
+  inspect:
+    name: Inspect Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get_version.outputs.VERSION }}
+      version_tag: ${{ steps.get_version.outputs.VERSION_TAG }}
+      skipped: ${{ steps.check_version.outputs.skipped }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+
+      - name: Extract Version from Changelog
+        id: get_version
+        run: |
+          VERSION=$(sed -n '/## \[/p' CHANGELOG.md | head -n 1 | cut -d'[' -f2 | cut -d']' -f1)
+          if [ -z "$VERSION" ]; then
+            echo "Error: Could not extract version from CHANGELOG.md"
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "VERSION_TAG=v$VERSION" >> $GITHUB_OUTPUT
+          echo "Detected Version: $VERSION"
+
+      - name: Check If Version Already Released
+        id: check_version
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="v${{ steps.get_version.outputs.VERSION }}"
+          if gh release view "$TAG" >/dev/null 2>&1 && [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
+            echo "Version $TAG already exists. Skipping release."
+            echo "skipped=true" >> $GITHUB_OUTPUT
+          else
+            echo "skipped=false" >> $GITHUB_OUTPUT
+          fi
+
   build:
     name: Build and Release
+    needs: inspect
+    if: needs.inspect.outputs.skipped != 'true'
     runs-on: macos-latest
     permissions:
       contents: write
@@ -16,6 +57,11 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6
+
+      - name: Prepare Environment
+        run: |
+          echo "VERSION=${{ needs.inspect.outputs.version }}" >> $GITHUB_ENV
+          echo "VERSION_TAG=${{ needs.inspect.outputs.version_tag }}" >> $GITHUB_ENV
 
       - name: Install Tools
         run: |
@@ -27,22 +73,22 @@ jobs:
         with:
           xcode-version: 'latest-stable'
 
-      - name: Check Xcode Version
-        run: xcodebuild -version
-
       - name: Generate Project
         run: xcodegen
 
       - name: Resolve Package Dependencies
-        run: xcodebuild -resolvePackageDependencies -scheme Maltex
+        run: xcodebuild -resolvePackageDependencies -scheme Maltex -project Maltex.xcodeproj
 
       - name: Build Universal App
         run: |
+          VERSION_CLEAN=${{ env.VERSION }}
           xcodebuild build \
             -scheme Maltex \
             -destination "platform=macOS" \
             -configuration Release \
             -derivedDataPath ./DerivedData \
+            MARKETING_VERSION=$VERSION_CLEAN \
+            CURRENT_PROJECT_VERSION=${{ github.run_number }} \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
@@ -81,27 +127,18 @@ jobs:
           # Re-sign thinned apps deeply with runtime options
           codesign --force --deep --sign - --options=runtime Build/x86_64/Maltex.app
           codesign --force --deep --sign - --options=runtime Build/arm64/Maltex.app
-          
-          echo "Verifying Architectures:"
-          file Build/Universal/Maltex.app/Contents/MacOS/Maltex
-          file Build/x86_64/Maltex.app/Contents/MacOS/Maltex
-          file Build/arm64/Maltex.app/Contents/MacOS/Maltex
 
-      - name: Create DMGs
-        id: create_dmgs
+      - name: Create DMGs and ZIPs
+        id: create_assets
         run: |
-          # Safe version extraction
-          if [[ $GITHUB_REF == refs/tags/* ]]; then
-            VERSION=${GITHUB_REF#refs/tags/v}
-          else
-            VERSION="manual-$(date +%Y%m%d%H%M%S)"
-          fi
-          # Sanitize: replace / with - to avoid path issues
-          VERSION=${VERSION//\//-}
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          VERSION=${{ env.VERSION }}
           
-          # Universal
+          # Universal ZIP (for Sparkle)
+          cd Build/Universal
+          zip -r "../../Maltex-${VERSION}-Universal.zip" "Maltex.app"
+          cd -
+
+          # Universal DMG
           create-dmg \
             --volname "Maltex Installer" \
             --volicon "Maltex/Assets.xcassets/AppIcon.appiconset/icon.png" \
@@ -114,7 +151,7 @@ jobs:
             "Maltex-${VERSION}-Universal.dmg" \
             "Build/Universal/Maltex.app"
 
-          # x86_64
+          # x86_64 DMG
           create-dmg \
             --volname "Maltex Installer (Intel)" \
             --volicon "Maltex/Assets.xcassets/AppIcon.appiconset/icon.png" \
@@ -127,7 +164,7 @@ jobs:
             "Maltex-${VERSION}-x86_64.dmg" \
             "Build/x86_64/Maltex.app"
 
-          # arm64
+          # arm64 DMG
           create-dmg \
             --volname "Maltex Installer (Apple Silicon)" \
             --volicon "Maltex/Assets.xcassets/AppIcon.appiconset/icon.png" \
@@ -139,33 +176,86 @@ jobs:
             --app-drop-link 600 185 \
             "Maltex-${VERSION}-arm64.dmg" \
             "Build/arm64/Maltex.app"
-
-      - name: Extract Release Notes
-        id: extract_release_notes
-        run: |
-          # Extract the content of the latest version from CHANGELOG.md
-          RELEASE_NOTES=$(awk '/^## \[/{if (count++) exit; next} count' CHANGELOG.md || echo "Manual build from branch $GITHUB_REF")
           
-          # Handle empty notes
-          if [ -z "$RELEASE_NOTES" ]; then
-            RELEASE_NOTES="Manual build from branch $GITHUB_REF"
+          echo "ZIP_NAME=Maltex-${VERSION}-Universal.zip" >> $GITHUB_ENV
+
+      - name: Extract Release Notes (en & zh)
+        run: |
+          VERSION_CLEAN=${{ env.VERSION }}
+          awk "/^## \[$VERSION_CLEAN\]/{flag=1;next} /^## \[/{flag=0} flag" CHANGELOG.md > full_notes.md
+          
+          if [ ! -s full_notes.md ]; then
+            echo "Release for version $VERSION_CLEAN. Check CHANGELOG.md for details." > release_notes_en.md
+            cp release_notes_en.md release_notes_zh.md
+          else
+            sed -n '1,/### Chinese/p' full_notes.md | grep -v "### Chinese" > release_notes_en.md
+            sed -n '/### Chinese/,$p' full_notes.md | sed '1d' > release_notes_zh.md
+            
+            if [ ! -s release_notes_zh.md ]; then cp release_notes_en.md release_notes_zh.md; fi
+            if [ ! -s release_notes_en.md ]; then cp full_notes.md release_notes_en.md; fi
+          fi
+          cp full_notes.md release_notes.md
+
+      - name: Generate Sparkle Appcast
+        env:
+          SPARKLE_SECRET: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          curl -L -O https://github.com/sparkle-project/Sparkle/releases/download/2.9.0/Sparkle-2.9.0.tar.xz
+          tar -xf Sparkle-2.9.0.tar.xz
+          CLEAN_KEY=$(echo "$SPARKLE_SECRET" | sed 's/EdDSAPrivateKey://' | tr -dc 'A-Za-z0-9+/=')
+          
+          if [ -z "$CLEAN_KEY" ]; then
+            echo "ERROR: SPARKLE_PRIVATE_KEY secret is missing!"
+            exit 1
           fi
 
-          # Handle multi-line output for GitHub Actions environment variables
-          echo "notes<<EOF" >> $GITHUB_OUTPUT
-          echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          mkdir -p deploy
+          cp "${{ env.ZIP_NAME }}" deploy/
+          cp release_notes_en.md "deploy/release_notes_en.md"
+          cp release_notes_zh.md "deploy/release_notes_zh.md"
+          cp release_notes_en.md "deploy/release_notes.md"
+          
+          export DYLD_FRAMEWORK_PATH="$PWD"
+          echo "$CLEAN_KEY" | ./bin/generate_appcast \
+            --ed-key-file - \
+            --download-url-prefix "https://github.com/lpgneg19/Maltex/releases/download/${{ env.VERSION_TAG }}/" \
+            deploy/
+          
+          if [ -f "deploy/appcast.xml" ]; then
+            mv deploy/appcast.xml .
+            sed -i.bak '/<description>/d' appcast.xml
+            sed -i.bak '/<sparkle:releaseNotesLink>/d' appcast.xml
+            
+            EN_LINK="https://github.com/lpgneg19/Maltex/releases/download/${{ env.VERSION_TAG }}/release_notes_en.md"
+            ZH_LINK="https://github.com/lpgneg19/Maltex/releases/download/${{ env.VERSION_TAG }}/release_notes_zh.md"
+            
+            sed -i.bak "/<enclosure/i\\
+            <sparkle:releaseNotesLink xml:lang=\"en\">$EN_LINK</sparkle:releaseNotesLink>" appcast.xml
+            sed -i.bak "/<enclosure/i\\
+            <sparkle:releaseNotesLink xml:lang=\"zh-Hans\">$ZH_LINK</sparkle:releaseNotesLink>" appcast.xml
+            
+            rm appcast.xml.bak
+          else
+            echo "ERROR: generate_appcast failed to produce appcast.xml."
+            exit 1
+          fi
 
       - name: Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ env.VERSION }}
-          draft: ${{ github.event_name == 'workflow_dispatch' }}
-          body: ${{ steps.extract_release_notes.outputs.notes }}
+          tag_name: ${{ env.VERSION_TAG }}
+          name: Release ${{ env.VERSION_TAG }}
+          draft: false
+          prerelease: false
+          body_path: release_notes.md
           files: |
             Maltex-*-Universal.dmg
             Maltex-*-x86_64.dmg
             Maltex-*-arm64.dmg
+            ${{ env.ZIP_NAME }}
+            release_notes_en.md
+            release_notes_zh.md
+            appcast.xml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
