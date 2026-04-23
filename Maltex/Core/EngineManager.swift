@@ -32,7 +32,12 @@ class EngineManager {
     }
 
     func start(settings: SettingsStore = SettingsStore()) {
-        stop()  // Ensure clean start
+        guard process == nil || process?.isRunning == false else {
+            print("[Engine] Already running, skip start")
+            return
+        }
+        process = nil
+
         // Pre-flight: Kill any rogue aria2c processes that might be holding the port
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
@@ -97,6 +102,26 @@ class EngineManager {
             if !trackers.isEmpty {
                 args.append("--bt-tracker=\(trackers)")
             }
+        }
+
+        // BT settings
+        args.append("--listen-port=\(settings.btPort)")
+        args.append("--dht-listen-port=\(settings.dhtPort)")
+        args.append("--enable-dht=true")
+        args.append("--bt-enable-lpd=true")
+        args.append("--enable-peer-exchange=true")
+
+        if !settings.upnpEnabled {
+            args.append("--disable-upnp=true")
+        }
+
+        if settings.btSaveMetadata {
+            args.append("--bt-save-metadata=true")
+        }
+
+        if settings.btForceEncryption {
+            args.append("--bt-require-crypto=true")
+            args.append("--bt-min-crypto-level=arc4")
         }
 
         if !settings.rpcSecret.isEmpty {
@@ -166,7 +191,9 @@ class EngineManager {
     }
 
     func restart() {
-        start()
+        stop()
+        let settings = SettingsStore()
+        start(settings: settings)
     }
 }
 

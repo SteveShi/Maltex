@@ -54,6 +54,9 @@ struct MaltexApp: App {
                     window.backgroundColor = .clear
                     // Ensure the toolbar/titlebar buttons are still usable but blend in
                 }
+                .task {
+                    await autoSyncTrackersOnLaunch()
+                }
         }
         .windowToolbarStyle(.unified)
         .commands {
@@ -73,6 +76,33 @@ struct MaltexApp: App {
         }
 
         MaltexMenuBar(taskStore: taskStore)
+    }
+
+    private func autoSyncTrackersOnLaunch() async {
+        guard settingsStore.autoSyncTracker else { return }
+        let sourceURLs = settingsStore.selectedTrackerSourceURLs
+        guard !sourceURLs.isEmpty else { return }
+
+        // Wait a bit for the engine to fully start
+        try? await Task.sleep(nanoseconds: 3_000_000_000)
+
+        let service = TrackerService()
+        let proxyHost = settingsStore.proxyEnabled ? settingsStore.proxyHost : nil
+        let proxyPort = settingsStore.proxyEnabled ? settingsStore.proxyPort : nil
+
+        let result = await service.fetchTrackers(
+            from: sourceURLs,
+            proxyHost: proxyHost,
+            proxyPort: proxyPort
+        )
+
+        if result.hasData {
+            settingsStore.trackerServers = result.trackers.joined(separator: "\n")
+            settingsStore.lastTrackerSyncTime = Date().timeIntervalSince1970
+            // Silently restart engine to apply new trackers
+            EngineManager.shared.restart()
+            print("[App] Auto-synced \(result.trackers.count) trackers from \(sourceURLs.count) source(s)")
+        }
     }
 
     private func handleIncomingURL(_ url: URL) {

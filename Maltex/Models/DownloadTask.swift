@@ -71,7 +71,11 @@ struct DownloadTask: Identifiable, Codable, Hashable {
         connections = decodeInt(.connections)
 
         infoHash = try container.decodeIfPresent(String.self, forKey: .infoHash)
-        numSeeders = try? container.decodeIfPresent(Int.self, forKey: .numSeeders)
+        if let seedersStr = try? container.decode(String.self, forKey: .numSeeders) {
+            numSeeders = Int(seedersStr)
+        } else {
+            numSeeders = try? container.decode(Int.self, forKey: .numSeeders)
+        }
         errorCode = try container.decodeIfPresent(String.self, forKey: .errorCode)
         followedBy = try container.decodeIfPresent(String.self, forKey: .followedBy)
         belongsTo = try container.decodeIfPresent(String.self, forKey: .belongsTo)

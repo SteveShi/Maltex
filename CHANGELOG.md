@@ -2,6 +2,43 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2026-04-24
+
+### Added
+- **Tracker Source Management**: Select from preset tracker sources (ngosang/trackerslist, XIU2/TrackersListCollection) with CDN mirror support.
+- **Custom Tracker Sources**: Add and manage custom tracker source URLs with validation.
+- **One-Click Tracker Sync**: Fetch and merge tracker lists from multiple sources concurrently with proxy support.
+- **Tracker Probing**: Probe tracker reachability with real-time status updates (online/offline/unknown) and protocol classification.
+- **Remove Offline Trackers**: One-click removal of unreachable trackers from the list.
+- **Auto-Sync on Launch**: Automatically sync tracker lists from selected sources when the app starts.
+- **Engine Restart Prompt**: Prompt to restart the aria2 engine after tracker list updates.
+
+### Fixed
+- **Engine Restart Bug**: Fixed `restart()` not properly stopping the old process, causing engine restarts to silently fail.
+- **BT Settings Not Applied**: Fixed BT-related settings (listen port, DHT port, UPnP, metadata saving, encryption) not being passed to aria2 engine.
+- **numSeeders Decoding**: Fixed task list potentially failing to decode when aria2 returns numSeeders as a string.
+- **Simultaneous Alerts**: Fixed partial sync success showing two alerts simultaneously in SwiftUI.
+
+---
+
+### Chinese
+### 新增
+- **Tracker 源管理**: 支持从预设 Tracker 源（ngosang/trackerslist、XIU2/TrackersListCollection）选择，含 CDN 镜像支持。
+- **自定义 Tracker 源**: 添加和管理自定义 Tracker 源 URL，带 URL 验证。
+- **一键同步 Tracker**: 从多个源并发抓取并合并去重 Tracker 列表，支持代理。
+- **Tracker 探测**: 实时探测 Tracker 可达性（在线/离线/未知），按协议分类显示。
+- **移除离线 Tracker**: 一键移除不可达的 Tracker。
+- **启动时自动同步**: 应用启动时自动从选中的源同步 Tracker 列表。
+- **引擎重启提示**: Tracker 列表更新后提示重启 aria2 引擎。
+
+### 修复
+- **引擎重启失败**: 修复 `restart()` 未正确停止旧进程，导致引擎重启静默失败的问题。
+- **BT 设置未生效**: 修复 BT 相关设置（监听端口、DHT 端口、UPnP、元数据保存、加密）未传递给 aria2 引擎的问题。
+- **numSeeders 解码错误**: 修复 aria2 返回字符串格式的 numSeeders 导致任务列表可能解码失败的问题。
+- **Alert 冲突**: 修复部分同步成功时两个弹窗同时显示的问题。
+
+---
+
 ## [1.0.0] - 2026-03-29
 
 ### Added

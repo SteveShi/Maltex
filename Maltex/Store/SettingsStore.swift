@@ -37,6 +37,37 @@ class SettingsStore: ObservableObject {
     @AppStorage("btAutoStart") var btAutoStart: Bool = true
     @AppStorage("btForceEncryption") var btForceEncryption: Bool = false
 
+    // Tracker Source Management
+    @AppStorage("selectedTrackerSourceURLs") private var selectedTrackerSourceURLsJSON: String = "[]"
+    @AppStorage("customTrackerSourceURLs") private var customTrackerSourceURLsJSON: String = "[]"
+    @AppStorage("autoSyncTracker") var autoSyncTracker: Bool = true
+    @AppStorage("lastTrackerSyncTime") var lastTrackerSyncTime: Double = 0
+
+    var selectedTrackerSourceURLs: [String] {
+        get {
+            let decoded = (try? JSONDecoder().decode([String].self, from: Data(selectedTrackerSourceURLsJSON.utf8))) ?? []
+            return decoded.isEmpty ? TrackerPresets.defaultSelectedURLs : decoded
+        }
+        set {
+            if let data = try? JSONEncoder().encode(newValue), let json = String(data: data, encoding: .utf8) {
+                selectedTrackerSourceURLsJSON = json
+            }
+        }
+    }
+
+    var customTrackerSourceURLs: [String] {
+        get { (try? JSONDecoder().decode([String].self, from: Data(customTrackerSourceURLsJSON.utf8))) ?? [] }
+        set {
+            if let data = try? JSONEncoder().encode(newValue), let json = String(data: data, encoding: .utf8) {
+                customTrackerSourceURLsJSON = json
+            }
+        }
+    }
+
+    var lastTrackerSyncDate: Date? {
+        lastTrackerSyncTime > 0 ? Date(timeIntervalSince1970: lastTrackerSyncTime) : nil
+    }
+
     static let defaultTrackers = """
         http://tracker.files.fm:6969/announce
         http://tracker.gbitt.info:80/announce
