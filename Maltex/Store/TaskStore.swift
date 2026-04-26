@@ -31,7 +31,6 @@ class TaskStore: ObservableObject {
 
     private var aria2: Aria2
     private var timer: AnyCancellable?
-    private var connectionAttempts = 0
 
     init(rpcHost: String = "localhost", rpcPort: Int = 16800, rpcSecret: String = "") {
         let settings = SettingsStore()
@@ -124,37 +123,43 @@ class TaskStore: ObservableObject {
     }
 
     /// 单独执行一个 RPC 调用并处理简单的 GID 返回（用于 addUri/addTorrent 等操作）
-    private func performActionCall(method: Aria2Method, params: [AnyEncodable],
-                                    onGid: (@Sendable (String) -> Void)? = nil) {
+    private func performActionCall(
+        method: Aria2Method,
+        params: [AnyEncodable],
+        failureFormat: String.LocalizationValue,
+        onGid: (@MainActor @Sendable (String) -> Void)? = nil
+    ) {
         aria2.call(method: method, params: params)
             .response { [weak self] response in
                 Task { @MainActor in
+                    guard let self else { return }
                     switch response.result {
                     case .success(let data):
-                        guard let data = data else { return }
+                        guard let data else { return }
                         if let rpcResponse = try? JSONDecoder().decode(
                             Aria2Response<String>.self, from: data),
                             let gid = rpcResponse.result
                         {
                             print("[TaskStore] Action success for GID: \(gid)")
-                            self?.isConnected = true
-                            self?.lastError = nil
+                            self.isConnected = true
+                            self.lastError = nil
                             onGid?(gid)
-                            // Small delay before fetching to allow engine state transition
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                self?.fetchTasks()
+                                self.fetchTasks()
                             }
                         } else if let rpcResponse = try? JSONDecoder().decode(
                             Aria2Response<AnyCodable>.self, from: data),
                             let error = rpcResponse.error
                         {
                             print("[TaskStore] RPC Error: \(error.message)")
-                            self?.isConnected = false
-                            self?.lastError = String(
-                                format: String(localized: "内核错误: %@"), error.message)
+                            self.isConnected = false
+                            self.lastError = String(
+                                format: String(localized: failureFormat), error.message)
                         }
                     case .failure(let error):
-                        self?.handleTasksResult(.failure(error))
+                        self.isConnected = false
+                        self.lastError = String(
+                            format: String(localized: failureFormat), error.localizedDescription)
                     }
                 }
             }
@@ -261,37 +266,12 @@ class TaskStore: ObservableObject {
                 params.append(AnyEncodable(options))
             }
 
-            aria2.call(method: .addUri, params: params).response { [weak self] response in
-                switch response.result {
-                case .success(let data):
-                    guard let data else { return }
-                    if let rpcResponse = try? JSONDecoder().decode(
-                        Aria2Response<String>.self, from: data),
-                        let gid = rpcResponse.result
-                    {
-                        Task { @MainActor in
-                            self?.lastAddedGid = gid
-                            self?.lastError = nil
-                            self?.fetchTasks()
-                        }
-                        return
-                    }
-
-                    if let rpcResponse = try? JSONDecoder().decode(
-                        Aria2Response<AnyCodable>.self, from: data),
-                        let error = rpcResponse.error
-                    {
-                        Task { @MainActor in
-                            self?.lastError = String(
-                                format: String(localized: "添加下载失败: %@"), error.message)
-                        }
-                    }
-                case .failure(let error):
-                    Task { @MainActor in
-                        self?.lastError = String(
-                            format: String(localized: "添加下载失败: %@"), error.localizedDescription)
-                    }
-                }
+            performActionCall(
+                method: .addUri,
+                params: params,
+                failureFormat: "添加下载失败: %@"
+            ) { [weak self] gid in
+                self?.lastAddedGid = gid
             }
         }
     }
@@ -321,18 +301,12 @@ class TaskStore: ObservableObject {
             params.append(AnyEncodable(options))
         }
 
-        aria2.call(method: .addTorrent, params: params).response { [weak self] response in
-            if case .success(let data) = response.result, let data = data {
-                if let rpcResponse = try? JSONDecoder().decode(
-                    Aria2Response<String>.self, from: data),
-                    let gid = rpcResponse.result
-                {
-                    Task { @MainActor in
-                        self?.lastAddedGid = gid
-                        self?.fetchTasks()
-                    }
-                }
-            }
+        performActionCall(
+            method: .addTorrent,
+            params: params,
+            failureFormat: "添加下载失败: %@"
+        ) { [weak self] gid in
+            self?.lastAddedGid = gid
         }
     }
 
@@ -421,7 +395,6 @@ class TaskStore: ObservableObject {
                 }
             }
         }
-        // Force local removal immediately
         // Force local removal immediately
         gids.forEach { historyStore.remove(gid: $0) }
         tasks.removeAll(where: { gids.contains($0.gid) })

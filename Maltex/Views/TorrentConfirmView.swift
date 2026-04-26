@@ -19,15 +19,6 @@ struct TorrentConfirmView: View {
     }
 
     @State private var selectedFileIndices: Set<String> = []
-    @State private var isAllSelected: Bool = true {
-        didSet {
-            if isAllSelected {
-                selectedFileIndices = Set(task.files.map { $0.index })
-            } else {
-                selectedFileIndices = []
-            }
-        }
-    }
 
     // Sort files by path for better display order
     private var sortedFiles: [DownloadFile] {

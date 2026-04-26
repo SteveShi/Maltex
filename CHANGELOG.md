@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.1] - 2026-04-26
+
+### Changed
+- **Task Intake Cleanup**: Consolidated duplicated RPC result handling for HTTP, Magnet, and Torrent task creation.
+- **Torrent Confirmation Cleanup**: Removed unused selection state from the Torrent confirmation dialog.
+- **Version Alignment**: Aligned the Safari extension version with the main app build settings.
+
+### Removed
+- **Temporary Search Output**: Removed a committed temporary grep output file.
+
+---
+
+### Chinese
+### 调整
+- **任务添加逻辑清理**: 合并 HTTP、Magnet 和 Torrent 任务创建中的重复 RPC 结果处理逻辑。
+- **种子确认清理**: 移除种子确认窗口中未使用的选择状态。
+- **版本一致性**: 将 Safari 扩展版本改为跟随主应用构建设置。
+
+### 移除
+- **临时搜索输出**: 移除误提交的临时 grep 输出文件。
+
+---
+
 ## [1.1.0] - 2026-04-24
 
 ### Added
