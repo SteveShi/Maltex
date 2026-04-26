@@ -31,7 +31,7 @@ Maltex is currently in active development. You can build it from source to try t
 ### Homebrew
 You can install Maltex via Homebrew tap:
 ```bash
-brew tap lpgneg19/tap
+brew tap SteveShi/tap
 brew install --cask maltex
 ```
 
@@ -43,7 +43,7 @@ brew install --cask maltex
 ### Build Instructions
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/1pgneg19/Maltex.git
+   git clone https://github.com/SteveShi/Maltex.git
    cd Maltex
    ```
 2. **Generate the Xcode Project**:

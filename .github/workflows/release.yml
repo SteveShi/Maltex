@@ -69,7 +69,7 @@ jobs:
           brew install create-dmg
 
       - name: Set up Xcode
-        uses: lpgneg19/setup-xcode@v2
+        uses: SteveShi/setup-xcode@v2
         with:
           xcode-version: 'latest-stable'
 
@@ -218,7 +218,7 @@ jobs:
           export DYLD_FRAMEWORK_PATH="$PWD"
           echo "$CLEAN_KEY" | ./bin/generate_appcast \
             --ed-key-file - \
-            --download-url-prefix "https://github.com/lpgneg19/Maltex/releases/download/${{ env.VERSION_TAG }}/" \
+            --download-url-prefix "https://github.com/SteveShi/Maltex/releases/download/${{ env.VERSION_TAG }}/" \
             deploy/
           
           if [ -f "deploy/appcast.xml" ]; then
@@ -226,8 +226,8 @@ jobs:
             sed -i.bak '/<description>/d' appcast.xml
             sed -i.bak '/<sparkle:releaseNotesLink>/d' appcast.xml
             
-            EN_LINK="https://github.com/lpgneg19/Maltex/releases/download/${{ env.VERSION_TAG }}/release_notes_en.md"
-            ZH_LINK="https://github.com/lpgneg19/Maltex/releases/download/${{ env.VERSION_TAG }}/release_notes_zh.md"
+            EN_LINK="https://github.com/SteveShi/Maltex/releases/download/${{ env.VERSION_TAG }}/release_notes_en.md"
+            ZH_LINK="https://github.com/SteveShi/Maltex/releases/download/${{ env.VERSION_TAG }}/release_notes_zh.md"
             
             sed -i.bak "/<enclosure/i\\
             <sparkle:releaseNotesLink xml:lang=\"en\">$EN_LINK</sparkle:releaseNotesLink>" appcast.xml
@@ -267,7 +267,7 @@ jobs:
           DMG_NAME="Maltex-${VERSION}-Universal.dmg"
           SHA256=$(shasum -a 256 "$DMG_NAME" | awk '{print $1}')
           
-          git clone https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/lpgneg19/homebrew-tap.git tap-repo
+          git clone https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/SteveShi/homebrew-tap.git tap-repo
           cd tap-repo
           
           sed -i '' "s/version \".*\"/version \"$VERSION\"/" Casks/maltex.rb

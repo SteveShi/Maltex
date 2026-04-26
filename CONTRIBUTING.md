@@ -12,15 +12,15 @@ By participating in this project, you are expected to uphold our [Code of Conduc
 
 ### Reporting Bugs
 
-- **Check if the bug has already been reported** by searching on the [GitHub Issues](https://github.com/1pgneg19/Maltex/issues) page.
-- If you can't find an open issue addressing the problem, [open a new one](https://github.com/1pgneg19/Maltex/issues/new).
+- **Check if the bug has already been reported** by searching on the [GitHub Issues](https://github.com/SteveShi/Maltex/issues) page.
+- If you can't find an open issue addressing the problem, [open a new one](https://github.com/SteveShi/Maltex/issues/new).
 - Use a clear and descriptive title.
 - Describe the exact steps which reproduce the problem in as many details as possible.
 
 ### Suggesting Enhancements
 
 - **Check if the enhancement has already been suggested.**
-- [Open a new issue](https://github.com/1pgneg19/Maltex/issues/new) and describe the enhancement you would like to see, and why it would be useful.
+- [Open a new issue](https://github.com/SteveShi/Maltex/issues/new) and describe the enhancement you would like to see, and why it would be useful.
 
 ### Pull Requests
 
@@ -42,7 +42,7 @@ By participating in this project, you are expected to uphold our [Code of Conduc
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/1pgneg19/Maltex.git
+   git clone https://github.com/SteveShi/Maltex.git
    cd Maltex
    ```
 
