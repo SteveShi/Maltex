@@ -24,6 +24,7 @@ class TaskStore: ObservableObject {
     @Published var tasks: [DownloadTask] = []
     @Published var isConnected = false
     @Published var lastError: String?
+    @Published var shouldPresentEngineError = false
     @Published var lastAddedGid: String?
 
     // History
@@ -31,22 +32,121 @@ class TaskStore: ObservableObject {
 
     private var aria2: Aria2
     private var timer: AnyCancellable?
+    private var isEngineBootstrapping = false
 
     init(rpcHost: String = "localhost", rpcPort: Int = 16800, rpcSecret: String = "") {
         let settings = SettingsStore()
-        EngineManager.shared.start(settings: settings)
-
+        let actualHost = settings.rpcHost.isEmpty ? rpcHost : settings.rpcHost
         let actualPort = settings.rpcPort
         let actualSecret = settings.rpcSecret
 
-        print("[TaskStore] Initializing Aria2Kit (HTTP) on \(rpcHost):\(actualPort)")
+        print("[TaskStore] Initializing Aria2Kit (HTTP) on \(actualHost):\(actualPort)")
 
         self.aria2 = Aria2(
-            ssl: false, host: rpcHost, port: UInt16(actualPort),
+            ssl: false, host: actualHost, port: UInt16(actualPort),
             token: actualSecret.isEmpty ? nil : actualSecret)
 
         requestNotificationPermission()
         startPolling()
+    }
+
+    func startEngineOnLaunchIfNeeded(settings: SettingsStore) async {
+        configureRPC(settings: settings)
+        guard settings.aria2StartOnLaunch else { return }
+
+        isEngineBootstrapping = true
+        isConnected = false
+        lastError = nil
+        shouldPresentEngineError = false
+        EngineManager.shared.start(settings: settings)
+
+        let ready = await waitForConfiguredRPC(settings: settings, timeout: 6)
+        isEngineBootstrapping = false
+        if ready {
+            fetchTasks()
+        } else if EngineManager.shared.isRunning {
+            lastError = String(localized: "无法连接到 Aria2 RPC")
+        }
+    }
+
+    func reconnectToConfiguredRPC() {
+        let settings = SettingsStore()
+        configureRPC(settings: settings)
+        isConnected = false
+        lastError = nil
+        shouldPresentEngineError = false
+        fetchTasks()
+    }
+
+    private func configureRPC(settings: SettingsStore) {
+        let host = settings.rpcHost.isEmpty ? "127.0.0.1" : settings.rpcHost
+        aria2 = Aria2(
+            ssl: false,
+            host: host,
+            port: UInt16(settings.rpcPort),
+            token: settings.rpcSecret.isEmpty ? nil : settings.rpcSecret
+        )
+    }
+
+    private func waitForConfiguredRPC(settings: SettingsStore, timeout: TimeInterval) async -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if await isConfiguredRPCReady(settings: settings) {
+                return true
+            }
+
+            if !EngineManager.shared.isRunning {
+                return false
+            }
+
+            try? await Task.sleep(nanoseconds: 300_000_000)
+        }
+
+        return false
+    }
+
+    private func isConfiguredRPCReady(settings: SettingsStore) async -> Bool {
+        let host = settings.rpcHost.isEmpty ? "127.0.0.1" : settings.rpcHost
+        guard let url = URL(string: "http://\(host):\(settings.rpcPort)/jsonrpc") else {
+            return false
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let params = settings.rpcSecret.isEmpty ? [] : ["token:\(settings.rpcSecret)"]
+        let payload: [String: Any] = [
+            "jsonrpc": "2.0",
+            "id": "maltex-rpc-ready",
+            "method": "aria2.getVersion",
+            "params": params,
+        ]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: payload)
+
+        do {
+            let (_, response) = try await URLSession.shared.data(for: request)
+            return (response as? HTTPURLResponse)?.statusCode == 200
+        } catch {
+            return false
+        }
+    }
+
+    func reconnectToConfiguredRPCAfterEngineRestart() {
+        let settings = SettingsStore()
+        configureRPC(settings: settings)
+        isConnected = false
+        lastError = nil
+        shouldPresentEngineError = false
+        isEngineBootstrapping = true
+        Task { @MainActor in
+            let ready = await waitForConfiguredRPC(settings: settings, timeout: 6)
+            isEngineBootstrapping = false
+            if ready {
+                fetchTasks()
+            } else if EngineManager.shared.isRunning {
+                lastError = String(localized: "无法连接到 Aria2 RPC")
+            }
+        }
     }
 
     private func requestNotificationPermission() {
@@ -74,12 +174,23 @@ class TaskStore: ObservableObject {
     private nonisolated(unsafe) var pendingFetchResults: [[DownloadTask]] = [[], [], []]
     private nonisolated(unsafe) var pendingFetchCount = 0
     private nonisolated(unsafe) var isFetching = false
+    private nonisolated(unsafe) var pendingFetchFailed = false
+    private nonisolated(unsafe) var pendingFetchErrorMessage: String?
 
     func fetchTasks() {
+        guard !isEngineBootstrapping else { return }
+        guard EngineManager.shared.isRunning else {
+            isConnected = false
+            lastError = nil
+            shouldPresentEngineError = false
+            return
+        }
         guard !isFetching else { return }
         isFetching = true
         pendingFetchResults = [[], [], []]
         pendingFetchCount = 0
+        pendingFetchFailed = false
+        pendingFetchErrorMessage = nil
 
         // 0: tellActive, 1: tellWaiting, 2: tellStopped
         fetchCategory(method: .tellActive, params: [], index: 0)
@@ -92,6 +203,10 @@ class TaskStore: ObservableObject {
             .response { [weak self] response in
                 Task { @MainActor in
                     guard let self else { return }
+                    guard EngineManager.shared.isRunning, !self.isEngineBootstrapping else {
+                        self.isFetching = false
+                        return
+                    }
                     switch response.result {
                     case .success(let data):
                         if let data = data,
@@ -103,10 +218,29 @@ class TaskStore: ObservableObject {
                         }
                     case .failure(let error):
                         print("[TaskStore] Fetch error (\(method.rawValue)): \(error.localizedDescription)")
+                        self.pendingFetchFailed = true
+                        self.pendingFetchErrorMessage = error.localizedDescription
                     }
 
                     self.pendingFetchCount += 1
                     if self.pendingFetchCount >= 3 {
+                        guard EngineManager.shared.isRunning, !self.isEngineBootstrapping else {
+                            self.isFetching = false
+                            return
+                        }
+                        if self.pendingFetchFailed {
+                            self.handleTasksResult(.failure(NSError(
+                                domain: "Maltex.Aria2RPC",
+                                code: 1,
+                                userInfo: [
+                                    NSLocalizedDescriptionKey: self.pendingFetchErrorMessage
+                                        ?? String(localized: "无法连接到 Aria2 RPC")
+                                ]
+                            )))
+                            self.isFetching = false
+                            return
+                        }
+
                         // 三个请求全部完成，合并所有结果后统一更新
                         let allTasks = self.pendingFetchResults.flatMap { $0 }
                         if allTasks.isEmpty && self.pendingFetchResults.allSatisfy({ $0.isEmpty }) {
@@ -155,11 +289,13 @@ class TaskStore: ObservableObject {
                             self.isConnected = false
                             self.lastError = String(
                                 format: String(localized: failureFormat), error.message)
+                            self.shouldPresentEngineError = true
                         }
                     case .failure(let error):
                         self.isConnected = false
                         self.lastError = String(
                             format: String(localized: failureFormat), error.localizedDescription)
+                        self.shouldPresentEngineError = true
                     }
                 }
             }
@@ -171,14 +307,19 @@ class TaskStore: ObservableObject {
             mergeTasks(fetchedTasks)
             if !isConnected {
                 print("[TaskStore] RPC handshake success")
-                isConnected = true
-                lastError = nil
             }
+            isConnected = true
+            lastError = nil
+            shouldPresentEngineError = false
         case .failure(let error):
             print("[TaskStore] Fetch error: \(error.localizedDescription)")
             isConnected = false
-            lastError = String(
-                format: String(localized: "引擎连接失败: %@"), error.localizedDescription)
+            if EngineManager.shared.isRunning && !isEngineBootstrapping {
+                lastError = String(
+                    format: String(localized: "引擎连接失败: %@"), error.localizedDescription)
+            } else {
+                lastError = nil
+            }
         }
     }
 

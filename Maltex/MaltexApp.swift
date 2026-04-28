@@ -32,6 +32,7 @@ struct MaltexApp: App {
     @StateObject private var taskStore = TaskStore()
     @StateObject private var settingsStore = SettingsStore()
     @StateObject private var updater = Updater()
+    @State private var didRunLaunchTasks = false
 
     var body: some Scene {
         WindowGroup {
@@ -55,6 +56,9 @@ struct MaltexApp: App {
                     // Ensure the toolbar/titlebar buttons are still usable but blend in
                 }
                 .task {
+                    guard !didRunLaunchTasks else { return }
+                    didRunLaunchTasks = true
+                    await taskStore.startEngineOnLaunchIfNeeded(settings: settingsStore)
                     await autoSyncTrackersOnLaunch()
                 }
         }
@@ -97,10 +101,16 @@ struct MaltexApp: App {
         )
 
         if result.hasData {
-            settingsStore.trackerServers = result.trackers.joined(separator: "\n")
+            let trackerServers = result.trackers.joined(separator: "\n")
+            guard trackerServers != settingsStore.trackerServers else { return }
+
+            settingsStore.trackerServers = trackerServers
             settingsStore.lastTrackerSyncTime = Date().timeIntervalSince1970
-            // Silently restart engine to apply new trackers
-            EngineManager.shared.restart()
+            if EngineManager.shared.isRunning {
+                // Silently restart engine to apply new trackers.
+                EngineManager.shared.restart(settings: settingsStore)
+                taskStore.reconnectToConfiguredRPCAfterEngineRestart()
+            }
             print("[App] Auto-synced \(result.trackers.count) trackers from \(sourceURLs.count) source(s)")
         }
     }

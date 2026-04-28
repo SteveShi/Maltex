@@ -9,7 +9,7 @@ struct SettingsView: View {
     private let maxWindowWidth: CGFloat = 860
     private let minWindowHeight: CGFloat = 440
     private let idealWindowHeight: CGFloat = 500
-    private let maxWindowHeight: CGFloat = 560
+    private let maxWindowHeight: CGFloat = 680
 
     var body: some View {
         TabView {
@@ -19,10 +19,10 @@ struct SettingsView: View {
                     Label("常规", systemImage: "gear")
                 }
 
-            EngineSettingsView()
+            Aria2SettingsView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .tabItem {
-                    Label("进阶", systemImage: "cpu")
+                    Label("Aria2", systemImage: "server.rack")
                 }
 
             ProxySettingsView()
@@ -215,22 +215,6 @@ struct GeneralSettingsView: View {
                         Toggle("下载完成后通知", isOn: $settings.notificationEnabled)
                     }
                 }
-
-                SettingsSection("状态") {
-                    AlignedFormRow(LocalizedStringKey("Aria2连接状态")) {
-                        HStack(spacing: 8) {
-                            Circle()
-                                .fill(taskStore.isConnected ? Color.green : Color.red)
-                                .frame(width: 10, height: 10)
-                            Text(
-                                taskStore.isConnected
-                                    ? String(localized: "连接正常") : String(localized: "连接失败")
-                            )
-                                .font(.system(size: 13))
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                }
             }
             .padding()
         }
@@ -265,6 +249,366 @@ struct EngineSettingsView: View {
                 }
             }
             .padding()
+        }
+    }
+}
+
+private enum Aria2SettingsCategory: String, CaseIterable, Identifiable {
+    case overview
+    case source
+    case rpc
+    case downloads
+    case http
+    case files
+    case advanced
+
+    var id: String { rawValue }
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .overview: "概览"
+        case .source: "内核来源"
+        case .rpc: "RPC 设置"
+        case .downloads: "下载任务"
+        case .http: "HTTP/FTP/SFTP"
+        case .files: "文件与会话"
+        case .advanced: "高级参数"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .overview: "gauge.with.dots.needle.50percent"
+        case .source: "server.rack"
+        case .rpc: "network"
+        case .downloads: "arrow.down.circle"
+        case .http: "globe"
+        case .files: "folder"
+        case .advanced: "slider.horizontal.3"
+        }
+    }
+}
+
+struct Aria2SettingsView: View {
+    @EnvironmentObject var settings: SettingsStore
+    @EnvironmentObject var taskStore: TaskStore
+    @StateObject private var engine = EngineManager.shared
+    @State private var showRestartPrompt = false
+    @State private var selectedCategory: Aria2SettingsCategory? = .overview
+
+    private var binarySourceBinding: Binding<SettingsStore.Aria2BinarySource> {
+        Binding(
+            get: { settings.aria2BinarySource },
+            set: { settings.aria2BinarySource = $0 }
+        )
+    }
+
+    private var sourceSummary: LocalizedStringKey {
+        switch settings.aria2BinarySource {
+        case .bundled: "使用 Maltex 随附的 aria2c，所有启动参数均由本页控制。"
+        case .commandLine: "使用 Homebrew 或系统路径中的 aria2c，仍由 Maltex 启动和停止。"
+        case .custom: "使用指定路径的 aria2c，仍由 Maltex 启动和停止。"
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: 0) {
+            List(selection: $selectedCategory) {
+                ForEach(Aria2SettingsCategory.allCases) { category in
+                    Label(category.title, systemImage: category.icon)
+                        .tag(category)
+                }
+            }
+            .listStyle(.sidebar)
+            .scrollContentBackground(.hidden)
+            .frame(width: 180)
+
+            Divider()
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    detailView(for: selectedCategory ?? .overview)
+
+                    HStack {
+                        Spacer()
+                        Button {
+                            showRestartPrompt = true
+                        } label: {
+                            Label("应用并重启内核", systemImage: "checkmark.circle")
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+                    .padding(.bottom, 16)
+                }
+                .padding()
+            }
+        }
+        .alert("应用 Aria2 设置", isPresented: $showRestartPrompt) {
+            Button(String(localized: "立即重启")) {
+                restartEngine()
+            }
+            Button(String(localized: "稍后"), role: .cancel) {}
+        } message: {
+            Text("这些设置需要重启 Aria2 内核后生效。")
+        }
+    }
+
+    @ViewBuilder
+    private func detailView(for category: Aria2SettingsCategory) -> some View {
+        switch category {
+        case .overview:
+            overviewSection
+        case .source:
+            sourceSection
+        case .rpc:
+            rpcSection
+        case .downloads:
+            downloadSection
+        case .http:
+            httpSection
+        case .files:
+            fileSection
+        case .advanced:
+            advancedSection
+        }
+    }
+
+    private var overviewSection: some View {
+        Group {
+            SettingsSection("内核控制") {
+                AlignedFormRow("运行状态") {
+                    HStack(spacing: 8) {
+                        Circle()
+                            .fill(engine.isRunning ? Color.green : Color.orange)
+                            .frame(width: 10, height: 10)
+                        Text(engine.isRunning ? "运行中" : "已停止")
+                            .font(.system(size: 13))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                AlignedFormRow("内核来源") {
+                    Text(settings.aria2BinarySource.localizedName)
+                        .font(.system(size: 13))
+                }
+
+                AlignedFormRow("随软件启动内核") {
+                    Toggle("", isOn: $settings.aria2StartOnLaunch)
+                        .toggleStyle(.switch)
+                        .labelsHidden()
+                }
+
+                AlignedFormRow("当前可执行文件") {
+                    Text(engine.activeBinaryPath.isEmpty ? String(localized: "尚未启动") : engine.activeBinaryPath)
+                        .font(.system(size: 11, design: .monospaced))
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .foregroundStyle(.secondary)
+                }
+
+                AlignedFormRow("内核操作") {
+                    HStack(spacing: 8) {
+                        Button {
+                            EngineManager.shared.start(settings: settings)
+                            taskStore.reconnectToConfiguredRPCAfterEngineRestart()
+                        } label: {
+                            Label("启动", systemImage: "play.fill")
+                        }
+                        .disabled(engine.isRunning)
+
+                        Button {
+                            EngineManager.shared.stop()
+                            taskStore.reconnectToConfiguredRPC()
+                        } label: {
+                            Label("停止", systemImage: "stop.fill")
+                        }
+                        .disabled(!engine.isRunning)
+
+                        Button {
+                            restartEngine()
+                        } label: {
+                            Label("重启", systemImage: "arrow.clockwise")
+                        }
+                    }
+                }
+
+                if !engine.lastMessage.isEmpty {
+                    AlignedFormRow("最近状态") {
+                        Text(engine.lastMessage)
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+    }
+
+    private var sourceSection: some View {
+        SettingsSection("Aria2 来源") {
+            AlignedFormRow("内核来源") {
+                Picker("", selection: binarySourceBinding) {
+                    ForEach(SettingsStore.Aria2BinarySource.allCases) { source in
+                        Text(source.localizedName).tag(source)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(maxWidth: 360)
+            }
+
+            AlignedFormRow("生效范围") {
+                Text(sourceSummary)
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+            }
+
+            if settings.aria2BinarySource == .custom {
+                AlignedFormRow("自定义路径") {
+                    HStack {
+                        TextField("/opt/homebrew/bin/aria2c", text: $settings.customAria2Path)
+                            .textFieldStyle(.roundedBorder)
+                        Button("选择...") {
+                            let panel = NSOpenPanel()
+                            panel.allowsMultipleSelection = false
+                            panel.canChooseDirectories = false
+                            panel.canChooseFiles = true
+                            if panel.runModal() == .OK {
+                                settings.customAria2Path = panel.url?.path ?? settings.customAria2Path
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var rpcSection: some View {
+        SettingsSection("RPC 设置") {
+            AlignedFormRow("RPC 主机") {
+                TextField("127.0.0.1", text: $settings.rpcHost)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 160)
+            }
+            AlignedFormRow("RPC 监听端口") {
+                TextField("", value: $settings.rpcPort, format: .number)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 80)
+            }
+            AlignedFormRow("RPC 授权密钥", description: "建议设置以增强安全性") {
+                SecureField("未设置", text: $settings.rpcSecret)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(maxWidth: 220)
+            }
+            AlignedFormRow("监听所有地址") {
+                Toggle("", isOn: $settings.rpcListenAll)
+                    .toggleStyle(.switch)
+                    .labelsHidden()
+            }
+            AlignedFormRow("允许所有来源") {
+                Toggle("", isOn: $settings.rpcAllowOriginAll)
+                    .toggleStyle(.switch)
+                    .labelsHidden()
+            }
+        }
+    }
+
+    private var downloadSection: some View {
+        Group {
+            SettingsSection("任务并发") {
+                numericRow("最大并发任务数", value: $settings.maxConcurrentDownloads, unit: "个", width: 80)
+                numericRow("单服务器连接数", value: $settings.maxConnectionPerServer, unit: "个", width: 80)
+                numericRow("最小分片大小", value: $settings.minSplitSize, unit: "MB", width: 80)
+            }
+
+            SettingsSection("速度限制") {
+                numericRow("上限下载网速", value: $settings.maxOverallDownloadLimit, unit: "KB/s", width: 90)
+                numericRow("上限上传网速", value: $settings.maxOverallUploadLimit, unit: "KB/s", width: 90)
+            }
+        }
+    }
+
+    private var httpSection: some View {
+        SettingsSection("HTTP/FTP/SFTP") {
+            numericRow("最大重试次数", value: $settings.maxTries, unit: "次", width: 80)
+            numericRow("重试等待", value: $settings.retryWait, unit: "秒", width: 80)
+            numericRow("连接超时", value: $settings.connectTimeout, unit: "秒", width: 80)
+            numericRow("传输超时", value: $settings.timeout, unit: "秒", width: 80)
+            toggleRow("校验证书", isOn: $settings.checkCertificate)
+            AlignedFormRow("用户代理") {
+                TextField("默认", text: $settings.userAgent)
+                    .textFieldStyle(.roundedBorder)
+            }
+            AlignedFormRow("引用页") {
+                TextField("默认", text: $settings.referer)
+                    .textFieldStyle(.roundedBorder)
+            }
+        }
+    }
+
+    private var fileSection: some View {
+        SettingsSection("文件与会话") {
+            AlignedFormRow("文件分配") {
+                Picker("", selection: $settings.fileAllocation) {
+                    Text("none").tag("none")
+                    Text("prealloc").tag("prealloc")
+                    Text("trunc").tag("trunc")
+                }
+                .frame(width: 140)
+            }
+            numericRow("磁盘缓存", value: $settings.diskCache, unit: "MB", width: 80)
+            numericRow("保存会话间隔", value: $settings.saveSessionInterval, unit: "秒", width: 80)
+            numericRow("最大下载结果", value: $settings.maxDownloadResult, unit: "项", width: 80)
+            toggleRow("断点续传", isOn: $settings.continueDownloads)
+            toggleRow("自动重命名", isOn: $settings.autoFileRenaming)
+            toggleRow("允许覆盖文件", isOn: $settings.allowOverwrite)
+            toggleRow("Content-Disposition UTF-8", isOn: $settings.contentDispositionDefaultUTF8)
+        }
+    }
+
+    private var advancedSection: some View {
+        SettingsSection("附加命令行参数") {
+            VStack(alignment: .leading, spacing: 8) {
+                TextEditor(text: $settings.extraAria2Arguments)
+                    .font(.system(.caption, design: .monospaced))
+                    .frame(height: 120)
+                    .padding(4)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6).stroke(Color.secondary.opacity(0.3))
+                    )
+                Text("每行输入一个 aria2c 参数，例如 --summary-interval=0")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func restartEngine() {
+        EngineManager.shared.restart(settings: settings)
+        taskStore.reconnectToConfiguredRPCAfterEngineRestart()
+    }
+
+    private func numericRow(
+        _ title: LocalizedStringKey,
+        value: Binding<Int>,
+        unit: LocalizedStringKey,
+        width: CGFloat
+    ) -> some View {
+        AlignedFormRow(title) {
+            HStack {
+                TextField("", value: value, format: .number)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: width)
+                Text(unit)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func toggleRow(_ title: LocalizedStringKey, isOn: Binding<Bool>) -> some View {
+        AlignedFormRow(title) {
+            Toggle("", isOn: isOn)
+                .toggleStyle(.switch)
+                .labelsHidden()
         }
     }
 }
@@ -317,6 +661,7 @@ struct ProxySettingsView: View {
 }
 struct BTSettingsView: View {
     @EnvironmentObject var settings: SettingsStore
+    @EnvironmentObject var taskStore: TaskStore
     @State private var trackerService = TrackerService()
     @State private var customSourceInput = ""
     @State private var showSyncAlert = false
@@ -377,6 +722,44 @@ struct BTSettingsView: View {
                     }
                     .padding(.top, 4)
                 }
+
+                SettingsSection("BitTorrent 高级") {
+                    AlignedFormRow("最大连接 Peer") {
+                        HStack {
+                            TextField("", value: $settings.btMaxPeers, format: .number)
+                                .textFieldStyle(.roundedBorder)
+                                .frame(width: 80)
+                            Text("个")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    AlignedFormRow("Peer 速度下限") {
+                        HStack {
+                            TextField("", value: $settings.btRequestPeerSpeedLimit, format: .number)
+                                .textFieldStyle(.roundedBorder)
+                                .frame(width: 80)
+                            Text("KB/s")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    AlignedFormRow("分享率") {
+                        TextField("", value: $settings.seedRatio, format: .number)
+                            .textFieldStyle(.roundedBorder)
+                            .frame(width: 80)
+                    }
+                    AlignedFormRow("做种时间") {
+                        HStack {
+                            TextField("", value: $settings.seedTime, format: .number)
+                                .textFieldStyle(.roundedBorder)
+                                .frame(width: 80)
+                            Text("分钟")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
             }
             .padding()
         }
@@ -388,7 +771,8 @@ struct BTSettingsView: View {
         .alert("Tracker 已更新", isPresented: $showRestartPrompt) {
             Button(String(localized: "立即重启")) {
                 Task { @MainActor in
-                    EngineManager.shared.restart()
+                    EngineManager.shared.restart(settings: settings)
+                    taskStore.reconnectToConfiguredRPCAfterEngineRestart()
                 }
             }
             Button(String(localized: "稍后"), role: .cancel) {}

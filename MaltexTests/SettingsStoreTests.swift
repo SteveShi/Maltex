@@ -12,6 +12,9 @@ final class SettingsStoreTests: XCTestCase {
         XCTAssertFalse(settings.downloadPath.isEmpty, "默认下载路径不应为空")
         XCTAssertEqual(settings.rpcPort, 16800)
         XCTAssertEqual(settings.rpcSecret, "")
+        XCTAssertEqual(settings.rpcHost, "127.0.0.1")
+        XCTAssertEqual(settings.aria2BinarySource, .bundled)
+        XCTAssertTrue(settings.aria2StartOnLaunch)
         XCTAssertEqual(settings.maxOverallDownloadLimit, 0)
         XCTAssertEqual(settings.maxOverallUploadLimit, 0)
         XCTAssertFalse(settings.proxyEnabled)
@@ -36,5 +39,21 @@ final class SettingsStoreTests: XCTestCase {
         XCTAssertFalse(settings.btSaveMetadata)
         XCTAssertTrue(settings.btAutoStart)
         XCTAssertFalse(settings.btForceEncryption)
+    }
+
+    func testAria2AdvancedDefaults() {
+        let settings = SettingsStore()
+
+        XCTAssertEqual(settings.minSplitSize, 20)
+        XCTAssertEqual(settings.maxTries, 5)
+        XCTAssertEqual(settings.retryWait, 5)
+        XCTAssertEqual(settings.timeout, 60)
+        XCTAssertEqual(settings.connectTimeout, 30)
+        XCTAssertEqual(settings.diskCache, 16)
+        XCTAssertEqual(settings.fileAllocation, "prealloc")
+        XCTAssertTrue(settings.continueDownloads)
+        XCTAssertTrue(settings.autoFileRenaming)
+        XCTAssertTrue(settings.checkCertificate)
+        XCTAssertFalse(settings.allowOverwrite)
     }
 }

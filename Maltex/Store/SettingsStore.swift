@@ -2,6 +2,22 @@ import Foundation
 import SwiftUI
 
 class SettingsStore: ObservableObject {
+    enum Aria2BinarySource: String, CaseIterable, Identifiable {
+        case bundled
+        case commandLine
+        case custom
+
+        var id: String { rawValue }
+
+        var localizedName: LocalizedStringKey {
+            switch self {
+            case .bundled: "内置 Aria2"
+            case .commandLine: "命令行 Aria2"
+            case .custom: "自定义 Aria2"
+            }
+        }
+    }
+
     // General
     @AppStorage("maxConcurrentDownloads") var maxConcurrentDownloads: Int = 5
     @AppStorage("maxConnectionPerServer") var maxConnectionPerServer: Int = 16
@@ -13,13 +29,37 @@ class SettingsStore: ObservableObject {
     @AppStorage("notificationEnabled") var notificationEnabled: Bool = true
 
     // RPC
+    @AppStorage("rpcHost") var rpcHost: String = "127.0.0.1"
     @AppStorage("rpcPort") var rpcPort: Int = 16800
     @AppStorage("rpcSecret") var rpcSecret: String = ""
+    @AppStorage("rpcListenAll") var rpcListenAll: Bool = false
+    @AppStorage("rpcAllowOriginAll") var rpcAllowOriginAll: Bool = true
 
     // Engine / Advanced
+    @AppStorage("aria2BinarySource") private var aria2BinarySourceRaw: String =
+        Aria2BinarySource.bundled.rawValue
+    @AppStorage("aria2StartOnLaunch") var aria2StartOnLaunch: Bool = true
+    @AppStorage("customAria2Path") var customAria2Path: String = ""
     @AppStorage("maxOverallDownloadLimit") var maxOverallDownloadLimit: Int = 0  // 0 = unlimited
     @AppStorage("maxOverallUploadLimit") var maxOverallUploadLimit: Int = 0
     @AppStorage("listenPort") var listenPort: Int = 6881
+    @AppStorage("minSplitSize") var minSplitSize: Int = 20
+    @AppStorage("maxTries") var maxTries: Int = 5
+    @AppStorage("retryWait") var retryWait: Int = 5
+    @AppStorage("timeout") var timeout: Int = 60
+    @AppStorage("connectTimeout") var connectTimeout: Int = 30
+    @AppStorage("diskCache") var diskCache: Int = 16
+    @AppStorage("saveSessionInterval") var saveSessionInterval: Int = 60
+    @AppStorage("maxDownloadResult") var maxDownloadResult: Int = 1000
+    @AppStorage("fileAllocation") var fileAllocation: String = "prealloc"
+    @AppStorage("continueDownloads") var continueDownloads: Bool = true
+    @AppStorage("autoFileRenaming") var autoFileRenaming: Bool = true
+    @AppStorage("allowOverwrite") var allowOverwrite: Bool = false
+    @AppStorage("checkCertificate") var checkCertificate: Bool = true
+    @AppStorage("contentDispositionDefaultUTF8") var contentDispositionDefaultUTF8: Bool = true
+    @AppStorage("userAgent") var userAgent: String = ""
+    @AppStorage("referer") var referer: String = ""
+    @AppStorage("extraAria2Arguments") var extraAria2Arguments: String = ""
 
     // Proxy
     @AppStorage("proxyEnabled") var proxyEnabled: Bool = false
@@ -36,6 +76,15 @@ class SettingsStore: ObservableObject {
     @AppStorage("btSaveMetadata") var btSaveMetadata: Bool = false
     @AppStorage("btAutoStart") var btAutoStart: Bool = true
     @AppStorage("btForceEncryption") var btForceEncryption: Bool = false
+    @AppStorage("btMaxPeers") var btMaxPeers: Int = 55
+    @AppStorage("btRequestPeerSpeedLimit") var btRequestPeerSpeedLimit: Int = 50
+    @AppStorage("seedRatio") var seedRatio: Double = 1.0
+    @AppStorage("seedTime") var seedTime: Int = 0
+
+    var aria2BinarySource: Aria2BinarySource {
+        get { Aria2BinarySource(rawValue: aria2BinarySourceRaw) ?? .bundled }
+        set { aria2BinarySourceRaw = newValue.rawValue }
+    }
 
     // Tracker Source Management
     @AppStorage("selectedTrackerSourceURLs") private var selectedTrackerSourceURLsJSON: String = "[]"

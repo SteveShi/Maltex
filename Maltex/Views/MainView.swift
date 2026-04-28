@@ -10,6 +10,7 @@ struct MainView: View {
     @State private var pendingRevealGid: String? = nil
     @EnvironmentObject var taskStore: TaskStore
     @EnvironmentObject var settings: SettingsStore
+    @StateObject private var engine = EngineManager.shared
 
     var body: some View {
         NavigationSplitView { sidebarView } detail: { detailView }
@@ -69,10 +70,13 @@ struct MainView: View {
         .alert("引擎错误", isPresented: engineAlertBinding) {
             Button("重试") {
                 taskStore.lastError = nil
-                EngineManager.shared.restart()
+                taskStore.shouldPresentEngineError = false
+                EngineManager.shared.restart(settings: settings)
+                taskStore.reconnectToConfiguredRPCAfterEngineRestart()
             }
             Button("取消", role: .cancel) {
                 taskStore.lastError = nil
+                taskStore.shouldPresentEngineError = false
             }
         } message: {
             if let error = taskStore.lastError {
@@ -84,37 +88,74 @@ struct MainView: View {
 
     private var engineAlertBinding: Binding<Bool> {
         Binding(
-            get: { taskStore.lastError != nil },
-            set: { if !$0 { taskStore.lastError = nil } }
+            get: { taskStore.shouldPresentEngineError && taskStore.lastError != nil },
+            set: {
+                if !$0 {
+                    taskStore.lastError = nil
+                    taskStore.shouldPresentEngineError = false
+                }
+            }
         )
     }
 
     @ViewBuilder
     private var sidebarView: some View {
-        List(selection: $selection) {
-            Section("下载状态") {
-                NavigationLink(value: "all") {
-                    Label("所有任务", systemImage: "tray.2")
-                }
-                NavigationLink(value: "downloading") {
-                    Label("正在下载", systemImage: "arrow.down.circle")
-                }
-                NavigationLink(value: "waiting") {
-                    Label("等待下载", systemImage: "clock")
-                }
-                NavigationLink(value: "paused") {
-                    Label("已暂停", systemImage: "pause.circle")
-                }
-                NavigationLink(value: "stopped") {
-                    Label("已停止", systemImage: "stop.circle")
-                }
-                NavigationLink(value: "completed") {
-                    Label("已完成", systemImage: "checkmark.circle")
+        VStack(spacing: 0) {
+            List(selection: $selection) {
+                Section("下载状态") {
+                    NavigationLink(value: "all") {
+                        Label("所有任务", systemImage: "tray.2")
+                    }
+                    NavigationLink(value: "downloading") {
+                        Label("正在下载", systemImage: "arrow.down.circle")
+                    }
+                    NavigationLink(value: "waiting") {
+                        Label("等待下载", systemImage: "clock")
+                    }
+                    NavigationLink(value: "paused") {
+                        Label("已暂停", systemImage: "pause.circle")
+                    }
+                    NavigationLink(value: "stopped") {
+                        Label("已停止", systemImage: "stop.circle")
+                    }
+                    NavigationLink(value: "completed") {
+                        Label("已完成", systemImage: "checkmark.circle")
+                    }
                 }
             }
+            .listStyle(.sidebar)
+            .scrollContentBackground(.hidden)
+
+            Divider()
+
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(sidebarConnectionColor)
+                    .frame(width: 8, height: 8)
+                Text("Aria2连接状态")
+                    .font(.caption)
+                Spacer()
+                Text(sidebarConnectionText)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
         }
-        .listStyle(.sidebar)
-        .scrollContentBackground(.hidden)
+    }
+
+    private var sidebarConnectionColor: Color {
+        if engine.isRunning && taskStore.isConnected {
+            return .green
+        }
+        return engine.isRunning ? .orange : .red
+    }
+
+    private var sidebarConnectionText: LocalizedStringKey {
+        if !engine.isRunning {
+            return "内核已停止"
+        }
+        return taskStore.isConnected ? "连接正常" : "连接失败"
     }
 
     @ViewBuilder
