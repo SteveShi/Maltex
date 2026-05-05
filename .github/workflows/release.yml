@@ -199,9 +199,11 @@ jobs:
       - name: Generate Sparkle Appcast
         env:
           SPARKLE_SECRET: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          curl -L -O https://github.com/sparkle-project/Sparkle/releases/download/2.9.0/Sparkle-2.9.0.tar.xz
-          tar -xf Sparkle-2.9.0.tar.xz
+          SPARKLE_VERSION=$(gh api repos/sparkle-project/Sparkle/releases/latest --jq '.tag_name' | sed 's/^v//')
+          curl -fL -H "User-Agent: curl" -o Sparkle.tar.xz "https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_VERSION}/Sparkle-${SPARKLE_VERSION}.tar.xz"
+          tar -xf Sparkle.tar.xz
           CLEAN_KEY=$(echo "$SPARKLE_SECRET" | sed 's/EdDSAPrivateKey://' | tr -dc 'A-Za-z0-9+/=')
           
           if [ -z "$CLEAN_KEY" ]; then
