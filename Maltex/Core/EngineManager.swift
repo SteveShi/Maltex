@@ -95,15 +95,22 @@ class EngineManager: ObservableObject {
             process.terminationHandler = { [weak self] terminatedProcess in
                 Task { @MainActor in
                     guard let self else { return }
+                    
+                    // Only update state if this is the active managed process.
+                    // This prevents old processes (e.g. from a restart) from overwriting
+                    // the state of a newly started process.
+                    guard self.process === terminatedProcess else {
+                        print("[Engine] Ignored termination of old process \(terminatedProcess.processIdentifier)")
+                        return
+                    }
+                    
                     self.isRunning = false
                     self.lastMessage = String(
                         format: String(localized: "Aria2 内核已停止，退出码 %d"),
                         terminatedProcess.terminationStatus
                     )
-                    if self.process === terminatedProcess {
-                        self.process = nil
-                        self.removeManagedPID()
-                    }
+                    self.process = nil
+                    self.removeManagedPID()
                 }
             }
 

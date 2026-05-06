@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.2] - 2026-05-07
+
+### Fixed
+- **Engine Race Condition**: Fixed a race condition where the termination handler of an old aria2 process could overwrite the state of a newly started process, causing the UI to incorrectly show "Aria2 engine stopped" during startup or restart.
+
+---
+
+### Chinese
+### 修复
+- **引擎启动竞态条件**: 修复了旧的 aria2 进程终止回调可能覆盖新启动进程状态的竞态条件。该问题曾导致在启动或重启内核时，UI 偶尔会错误地显示“Aria2 内核已停止”。
+
+---
+
 ## [1.1.1] - 2026-04-26
 
 ### Changed
