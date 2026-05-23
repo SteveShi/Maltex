@@ -498,6 +498,11 @@ struct Aria2SettingsView: View {
                     .textFieldStyle(.roundedBorder)
                     .frame(maxWidth: 220)
             }
+            AlignedFormRow("使用 HTTPS 连接", description: "仅在 Aria2 RPC 配置了 TLS 证书时启用") {
+                Toggle("", isOn: $settings.rpcSSL)
+                    .toggleStyle(.switch)
+                    .labelsHidden()
+            }
             AlignedFormRow("监听所有地址") {
                 Toggle("", isOn: $settings.rpcListenAll)
                     .toggleStyle(.switch)

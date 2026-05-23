@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.3] - 2026-05-23
+
+### Fixed
+- **Polling Deadlock**: Added generation tokens and a 10s timeout to the aggregated task fetch state machine, so a stuck RPC response no longer freezes the task list forever.
+- **Main-Thread Torrent IO**: `addTorrent` now reads the .torrent file off the main thread, preventing UI hangs with large torrents.
+- **Remove Task Consistency**: When a removal RPC fails on the engine side, the affected tasks are now restored to the UI and an error is surfaced instead of silently disappearing.
+- **changeOption Error Propagation**: `resumeTask` no longer unpauses a task when its option change fails; the user is notified instead.
+- **Concurrency Storm on Bulk Add**: Multiple URIs added at once are now serialized through an internal action queue, avoiding flooding aria2's single-threaded RPC.
+
+### Changed
+- **HTTPS RPC Support**: The RPC client now honors a new "Use HTTPS" setting instead of hard-coding HTTP.
+- **Deferred Notification Permission**: Notification authorization is requested on the first actual delivery rather than at app launch.
+- **Concurrency Hygiene**: Removed `nonisolated(unsafe)` from TaskStore's fetch state, reusing a single `JSONDecoder`, and made `Aria2Response.id` tolerate string / number / null per JSON-RPC 2.0.
+- **Engine Shutdown**: TaskStore no longer schedules a MainActor task in `deinit`; engine shutdown remains the responsibility of `applicationWillTerminate`.
+
+---
+
+### Chinese
+### 修复
+- **轮询死锁**: 任务聚合抓取增加代数令牌和 10 秒超时保护，避免某次 RPC 卡死后任务列表永久停止刷新。
+- **主线程读取种子**: `addTorrent` 改为异步读取 `.torrent` 文件，大种子不再卡住 UI。
+- **删除任务一致性**: 引擎端删除失败时，UI 会回滚被误删的任务并给出错误提示，不再静默丢失。
+- **changeOption 错误传递**: `resumeTask` 在选项修改失败时不会再 unpause，并向用户反馈失败原因。
+- **批量添加并发风暴**: 一次性添加多个 URI 时改用串行队列下发，避免对 aria2 单线程 RPC 形成并发洪峰。
+
+### 变更
+- **支持 HTTPS RPC**: 新增"使用 HTTPS 连接"设置项，RPC 客户端不再硬编码为 http。
+- **延迟通知权限申请**: 改为在第一次实际发送通知前请求权限，避免应用启动即弹系统对话框。
+- **并发安全清理**: 移除 TaskStore 抓取状态上的 `nonisolated(unsafe)`，统一复用 `JSONDecoder`，并让 `Aria2Response.id` 按 JSON-RPC 2.0 兼容 string / number / null。
+- **引擎关闭**: TaskStore 的 `deinit` 不再调度 MainActor Task，引擎停止统一由 `applicationWillTerminate` 兜底。
+
+---
+
 ## [1.1.2] - 2026-05-07
 
 ### Fixed

@@ -32,6 +32,7 @@ class SettingsStore: ObservableObject {
     @AppStorage("rpcHost") var rpcHost: String = "127.0.0.1"
     @AppStorage("rpcPort") var rpcPort: Int = 16800
     @AppStorage("rpcSecret") var rpcSecret: String = ""
+    @AppStorage("rpcSSL") var rpcSSL: Bool = false
     @AppStorage("rpcListenAll") var rpcListenAll: Bool = false
     @AppStorage("rpcAllowOriginAll") var rpcAllowOriginAll: Bool = true
 
