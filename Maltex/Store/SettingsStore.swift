@@ -43,7 +43,6 @@ class SettingsStore: ObservableObject {
     @AppStorage("customAria2Path") var customAria2Path: String = ""
     @AppStorage("maxOverallDownloadLimit") var maxOverallDownloadLimit: Int = 0  // 0 = unlimited
     @AppStorage("maxOverallUploadLimit") var maxOverallUploadLimit: Int = 0
-    @AppStorage("listenPort") var listenPort: Int = 6881
     @AppStorage("minSplitSize") var minSplitSize: Int = 20
     @AppStorage("maxTries") var maxTries: Int = 5
     @AppStorage("retryWait") var retryWait: Int = 5

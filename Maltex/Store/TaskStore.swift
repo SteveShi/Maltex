@@ -75,6 +75,9 @@ class TaskStore: ObservableObject {
         isEngineBootstrapping = false
         if ready {
             fetchTasks()
+            if settings.autoResumeTasks {
+                aria2.call(method: .unpauseAll, params: []).response { _ in }
+            }
         } else if EngineManager.shared.isRunning {
             lastError = String(localized: "无法连接到 Aria2 RPC")
         }
@@ -459,7 +462,11 @@ class TaskStore: ObservableObject {
         for uri in uris {
             enqueueAction { [weak self] in
                 guard let self else { return }
-                await self.addSingleUri(uri, options: options)
+                var currentOptions = options
+                if !settings.btAutoStart && uri.lowercased().hasPrefix("magnet:") {
+                    currentOptions["pause"] = "true"
+                }
+                await self.addSingleUri(uri, options: currentOptions)
             }
         }
     }
@@ -483,8 +490,8 @@ class TaskStore: ObservableObject {
     }
 
     func addTorrent(at path: String) {
-        // Default to paused=true to allow Preview Dialog to handle confirmation
-        addTorrent(at: path, paused: true)
+        let settings = SettingsStore()
+        addTorrent(at: path, paused: !settings.btAutoStart)
     }
 
     func addTorrent(at path: String, paused: Bool) {

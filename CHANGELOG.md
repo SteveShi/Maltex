@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.4] - 2026-05-30
+
+### Fixed
+- **Dummy Preferences**: Integrated all previously inactive settings options into real download routines.
+  - Linked `btAutoStart` to determine automatic download state of `.torrent` and `magnet:` files, bypassing prompt when enabled.
+  - Connected `autoResumeTasks` to call `unpauseAll` RPC on app launch after successful connection.
+  - Removed redundant `listenPort` from settings store, and purged the non-rendered `EngineSettingsView` from settings views.
+- **DownloadTask Test Fix**: Fixed a bug in `testHashableEquality` where different status tasks were incorrectly expected to be equal under custom `==` override.
+
+---
+
+### Chinese
+### 修复
+- **虚设设置项**: 接入此前未生效的虚设设置选项到实际逻辑中。
+  - 关联 `btAutoStart` 设置，自动决定种子和磁力链接的自动开始状态，开启时直接启动并跳过弹窗确认。
+  - 关联 `autoResumeTasks` 设置，在应用成功连接 RPC 后自动调用 `unpauseAll` 批量恢复所有未完成的任务。
+  - 清理了未渲染的 `EngineSettingsView` 页面以及其中与 `btPort` 冲突的冗余配置项 `listenPort`。
+- **单元测试修复**: 修正了 `testHashableEquality` 中由于自定义 `==` 比对 status 导致的不同任务断言相等的 bug。
+
+---
+
 ## [1.1.3] - 2026-05-23
 
 ### Fixed

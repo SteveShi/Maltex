@@ -173,11 +173,12 @@ final class DownloadTaskTests: XCTestCase {
     }
 
     func testHashableEquality() throws {
-        let task1 = try JSONDecoder().decode(DownloadTask.self, from: makeMinimalTaskJSON(gid: "same_gid"))
+        let task1 = try JSONDecoder().decode(DownloadTask.self, from: makeMinimalTaskJSON(gid: "same_gid", status: "active"))
         let task2 = try JSONDecoder().decode(DownloadTask.self, from: makeMinimalTaskJSON(gid: "same_gid", status: "complete"))
 
-        // Same GID = equal (even with different data)
-        XCTAssertEqual(task1, task2)
+        // Different data fields (status) mean they are not equal under ==
+        XCTAssertNotEqual(task1, task2)
+        // But since hash is based solely on gid, their hashValues are still equal
         XCTAssertEqual(task1.hashValue, task2.hashValue)
     }
 

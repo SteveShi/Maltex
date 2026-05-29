@@ -221,38 +221,6 @@ struct GeneralSettingsView: View {
     }
 }
 
-struct EngineSettingsView: View {
-    @EnvironmentObject var settings: SettingsStore
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                SettingsSection("RPC 服务") {
-                    AlignedFormRow("RPC 监听端口") {
-                        TextField("", value: $settings.rpcPort, format: .number)
-                            .textFieldStyle(.roundedBorder)
-                            .frame(width: 80)
-                    }
-                    AlignedFormRow("RPC 授权密钥", description: "建议设置以增强安全性") {
-                        SecureField("未设置", text: $settings.rpcSecret)
-                            .textFieldStyle(.roundedBorder)
-                            .frame(maxWidth: 200)
-                    }
-                }
-
-                SettingsSection("进阶网络") {
-                    AlignedFormRow("监听端口") {
-                        TextField("", value: $settings.listenPort, format: .number)
-                            .textFieldStyle(.roundedBorder)
-                            .frame(width: 100)
-                    }
-                }
-            }
-            .padding()
-        }
-    }
-}
-
 private enum Aria2SettingsCategory: String, CaseIterable, Identifiable {
     case overview
     case source
