@@ -7,13 +7,13 @@ options:
 packages:
   Aria2Kit:
     url: https://github.com/baptistecdr/Aria2Kit
-    version: 1.0.4
+    version: 1.0.5
   AnyCodable:
     url: https://github.com/Flight-School/AnyCodable
     version: 0.6.7
   Alamofire:
     url: https://github.com/Alamofire/Alamofire
-    version: 5.11.0
+    version: 5.11.2
   Sparkle:
     url: https://github.com/sparkle-project/Sparkle
     version: 2.9.0

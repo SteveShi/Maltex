@@ -1,13 +1,13 @@
 {
-  "originHash" : "6ac7739699ad479aa681c39a0d3637c3c0f77e96ecde59ace90d8e427611bbef",
+  "originHash" : "e3d0c5f92c0a2d70144a1fc1f365fba7134470f4c1c17cee8c7a1ea064c92987",
   "pins" : [
     {
       "identity" : "alamofire",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Alamofire/Alamofire",
       "state" : {
-        "revision" : "7be73f6c2b5cd90e40798b06ebd5da8f9f79cf88",
-        "version" : "5.11.0"
+        "revision" : "e938f8c66708e7352fc7e3512647fa54255b267a",
+        "version" : "5.11.2"
       }
     },
     {
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/baptistecdr/Aria2Kit",
       "state" : {
-        "revision" : "fef4c1eb3b93f349bf30c0a43564ca1b9a5b4b37",
-        "version" : "1.0.4"
+        "revision" : "e3c84747f477a41e7028b6e66f8f2097d169344f",
+        "version" : "1.0.5"
       }
     }
   ],

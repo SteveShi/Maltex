@@ -11,6 +11,9 @@ All notable changes to this project will be documented in this file.
   - Removed redundant `listenPort` from settings store, and purged the non-rendered `EngineSettingsView` from settings views.
 - **DownloadTask Test Fix**: Fixed a bug in `testHashableEquality` where different status tasks were incorrectly expected to be equal under custom `==` override.
 
+### Changed
+- **Dependencies Update**: Upgraded Aria2Kit dependency to 1.0.5 and Alamofire dependency to 5.11.2 to resolve version compatibility.
+
 ---
 
 ### Chinese
@@ -20,6 +23,9 @@ All notable changes to this project will be documented in this file.
   - 关联 `autoResumeTasks` 设置，在应用成功连接 RPC 后自动调用 `unpauseAll` 批量恢复所有未完成的任务。
   - 清理了未渲染的 `EngineSettingsView` 页面以及其中与 `btPort` 冲突的冗余配置项 `listenPort`。
 - **单元测试修复**: 修正了 `testHashableEquality` 中由于自定义 `==` 比对 status 导致的不同任务断言相等的 bug。
+
+### 变更
+- **依赖项更新**: 将 Aria2Kit 依赖升级至 1.0.5，同时将 Alamofire 依赖升级至 5.11.2 以解决版本兼容性问题。
 
 ---
 
