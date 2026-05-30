@@ -73,7 +73,7 @@ class EngineManager: ObservableObject {
             // Auto-fallback to bundled aria2 if aria2-next fails verification
             if settings.aria2BinarySource == .bundledAria2Next {
                 try? "[Engine] Attempting fallback to bundled aria2...".appendLineToURL(fileURL: appLogPath)
-                var fallbackSettings = settings
+                let fallbackSettings = SettingsStore()
                 fallbackSettings.aria2BinarySource = .bundled
                 start(settings: fallbackSettings)
                 return
@@ -146,9 +146,9 @@ class EngineManager: ObservableObject {
                     // Auto-fallback to bundled aria2 if aria2-next crashes immediately
                     if settings.aria2BinarySource == .bundledAria2Next {
                         try? "[Engine] aria2-next failed to start, falling back to bundled aria2...".appendLineToURL(fileURL: self.appLogPath)
-                        var fallbackSettings = settings
+                        let fallbackSettings = SettingsStore()
                         fallbackSettings.aria2BinarySource = .bundled
-                        await Task.sleep(nanoseconds: 500_000_000)
+                        try? await Task.sleep(nanoseconds: 500_000_000)
                         self.start(settings: fallbackSettings)
                     }
                 }
@@ -165,7 +165,7 @@ class EngineManager: ObservableObject {
             // Auto-fallback to bundled aria2 if aria2-next fails to launch
             if settings.aria2BinarySource == .bundledAria2Next {
                 try? "[Engine] aria2-next launch failed, falling back to bundled aria2...".appendLineToURL(fileURL: appLogPath)
-                var fallbackSettings = settings
+                let fallbackSettings = SettingsStore()
                 fallbackSettings.aria2BinarySource = .bundled
                 start(settings: fallbackSettings)
             }
