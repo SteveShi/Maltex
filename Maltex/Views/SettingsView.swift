@@ -449,8 +449,7 @@ struct Aria2SettingsView: View {
                             Text(source.localizedName).tag(source)
                         }
                     }
-                    .pickerStyle(.segmented)
-                    .frame(maxWidth: 480)
+                    .frame(width: 280)
                 }
 
                 AlignedFormRow("生效范围") {
