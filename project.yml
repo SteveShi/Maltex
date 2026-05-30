@@ -33,9 +33,6 @@ targets:
       - path: extra/darwin/arm64/engine/aria2-next
         type: file
         buildPhase: resources
-      - path: extra/darwin/x64/engine/aria2-next
-        type: file
-        buildPhase: resources
       - path: extra/darwin/arm64/engine/aria2.conf
         type: file
         buildPhase: resources
