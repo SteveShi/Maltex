@@ -492,7 +492,7 @@ struct Aria2SettingsView: View {
                             Text(mode.localizedName).tag(mode)
                         }
                     }
-                    .frame(width: 180)
+                    .frame(width: 180, alignment: .leading)
                 }
 
                 AlignedFormRow("远程种子元数据") {
@@ -501,7 +501,7 @@ struct Aria2SettingsView: View {
                             Text(mode.localizedName).tag(mode)
                         }
                     }
-                    .frame(width: 180)
+                    .frame(width: 180, alignment: .leading)
                 }
 
                 AlignedFormRow("终端日志级别") {
@@ -510,7 +510,7 @@ struct Aria2SettingsView: View {
                             Text(level.rawValue).tag(level)
                         }
                     }
-                    .frame(width: 140)
+                    .frame(width: 140, alignment: .leading)
                 }
 
                 AlignedFormRow("文件日志级别") {
@@ -519,7 +519,7 @@ struct Aria2SettingsView: View {
                             Text(level.rawValue).tag(level)
                         }
                     }
-                    .frame(width: 140)
+                    .frame(width: 140, alignment: .leading)
                 }
 
                 numericRow("日志文件大小", value: $settings.aria2NextLogMaxSizeMB, unit: "MB", width: 80)

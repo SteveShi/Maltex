@@ -191,8 +191,14 @@ class EngineManager: ObservableObject {
     }
 
     func restart(settings: SettingsStore) {
-        stop(waitForExit: true)
-        usleep(200_000)
+        Task {
+            await restartAsync(settings: settings)
+        }
+    }
+
+    private func restartAsync(settings: SettingsStore) async {
+        stop(waitForExit: false)
+        try? await Task.sleep(nanoseconds: 500_000_000)
         start(settings: settings)
     }
 
