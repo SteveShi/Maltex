@@ -2,6 +2,45 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.5] - 2026-05-31
+
+### Added
+- **Aria2 Next Experimental Engine**: Integrated aria2-next 2.3.6 as an experimental download engine option.
+  - Added support for both arm64 and x64 architectures.
+  - Implemented binary verification mechanism to ensure integrity before startup.
+  - Added three-layer auto-fallback protection: verification failure, launch failure, and immediate crash all trigger automatic fallback to bundled aria2.
+  - Added UI settings for aria2-next specific features:
+    - Proxy mode (auto/direct/manual)
+    - Torrent metadata handling (save/start/memory)
+    - Terminal and file log levels with rotation settings
+  - Handled aria2-next specific parameters: `--torrent-metadata`, `--proxy-mode`, `--terminal-log-level`, `--file-log-level`, `--log-file`, `--log-max-size`, `--log-max-files`, `--bt-force-encryption`.
+  - Excluded unsupported parameters for aria2-next: `--bt-request-peer-speed-limit`, `--disable-upnp`.
+
+### Changed
+- **Engine Manager**: Enhanced startup logic with binary verification and automatic fallback mechanism.
+- **Settings UI**: Dynamically show/hide options based on selected engine type.
+
+---
+
+### Chinese
+### 新增
+- **Aria2 Next 实验性内核**: 集成 aria2-next 2.3.6 作为实验性下载引擎选项。
+  - 添加 arm64 和 x64 双架构支持。
+  - 实现二进制验证机制，确保启动前文件完整性。
+  - 添加三层自动降级保护：验证失败、启动失败、立即崩溃均会自动回退到标准 aria2。
+  - 添加 aria2-next 特有功能的 UI 设置：
+    - 代理模式（自动/直连/手动）
+    - 种子元数据处理（仅保存/保存并开始/仅内存启动）
+    - 终端和文件日志级别及轮转设置
+  - 处理 aria2-next 特有参数：`--torrent-metadata`、`--proxy-mode`、`--terminal-log-level`、`--file-log-level`、`--log-file`、`--log-max-size`、`--log-max-files`、`--bt-force-encryption`。
+  - 排除 aria2-next 不支持的参数：`--bt-request-peer-speed-limit`、`--disable-upnp`。
+
+### 变更
+- **引擎管理器**: 增强启动逻辑，添加二进制验证和自动降级机制。
+- **设置界面**: 根据选择的引擎类型动态显示/隐藏选项。
+
+---
+
 ## [1.1.4] - 2026-05-30
 
 ### Fixed
