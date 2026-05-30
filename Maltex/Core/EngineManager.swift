@@ -64,6 +64,25 @@ class EngineManager: ObservableObject {
             return
         }
 
+        // Verify binary before starting
+        if !verifyBinary(at: binURL, expectedType: settings.aria2BinarySource) {
+            let msg = "[Engine] Binary verification failed for \(binURL.path)"
+            try? msg.appendLineToURL(fileURL: appLogPath)
+            print(msg)
+
+            // Auto-fallback to bundled aria2 if aria2-next fails verification
+            if settings.aria2BinarySource == .bundledAria2Next {
+                try? "[Engine] Attempting fallback to bundled aria2...".appendLineToURL(fileURL: appLogPath)
+                var fallbackSettings = settings
+                fallbackSettings.aria2BinarySource = .bundled
+                start(settings: fallbackSettings)
+                return
+            } else {
+                lastMessage = String(localized: "Aria2 二进制文件验证失败")
+                return
+            }
+        }
+
         let process = Process()
         process.executableURL = binURL
         let args = buildArguments(settings: settings)
@@ -95,7 +114,7 @@ class EngineManager: ObservableObject {
             process.terminationHandler = { [weak self] terminatedProcess in
                 Task { @MainActor in
                     guard let self else { return }
-                    
+
                     // Only update state if this is the active managed process.
                     // This prevents old processes (e.g. from a restart) from overwriting
                     // the state of a newly started process.
@@ -103,7 +122,7 @@ class EngineManager: ObservableObject {
                         print("[Engine] Ignored termination of old process \(terminatedProcess.processIdentifier)")
                         return
                     }
-                    
+
                     self.isRunning = false
                     self.lastMessage = String(
                         format: String(localized: "Aria2 内核已停止，退出码 %d"),
@@ -123,6 +142,15 @@ class EngineManager: ObservableObject {
                     let errorMsg = "[Engine] CRITICAL: Process exited immediately with code \(exitCode)"
                     try? errorMsg.appendLineToURL(fileURL: self.appLogPath)
                     print(errorMsg)
+
+                    // Auto-fallback to bundled aria2 if aria2-next crashes immediately
+                    if settings.aria2BinarySource == .bundledAria2Next {
+                        try? "[Engine] aria2-next failed to start, falling back to bundled aria2...".appendLineToURL(fileURL: self.appLogPath)
+                        var fallbackSettings = settings
+                        fallbackSettings.aria2BinarySource = .bundled
+                        await Task.sleep(nanoseconds: 500_000_000)
+                        self.start(settings: fallbackSettings)
+                    }
                 }
             }
         } catch {
@@ -133,6 +161,14 @@ class EngineManager: ObservableObject {
             lastMessage = msg
             try? "[Engine] \(msg)".appendLineToURL(fileURL: appLogPath)
             print(msg)
+
+            // Auto-fallback to bundled aria2 if aria2-next fails to launch
+            if settings.aria2BinarySource == .bundledAria2Next {
+                try? "[Engine] aria2-next launch failed, falling back to bundled aria2...".appendLineToURL(fileURL: appLogPath)
+                var fallbackSettings = settings
+                fallbackSettings.aria2BinarySource = .bundled
+                start(settings: fallbackSettings)
+            }
         }
     }
 
@@ -161,14 +197,13 @@ class EngineManager: ObservableObject {
     }
 
     private func buildArguments(settings: SettingsStore) -> [String] {
+        let isAria2Next = settings.aria2BinarySource == .bundledAria2Next
         var args = [
             "--enable-rpc",
             "--rpc-listen-all=\(settings.rpcListenAll ? "true" : "false")",
             "--rpc-listen-port=\(settings.rpcPort)",
             "--rpc-allow-origin-all=\(settings.rpcAllowOriginAll ? "true" : "false")",
             "--dir=\(settings.downloadPath.isEmpty ? "/tmp" : settings.downloadPath)",
-            "--log=\(logPath.path)",
-            "--log-level=notice",
             "--max-concurrent-downloads=\(settings.maxConcurrentDownloads)",
             "--max-connection-per-server=\(settings.maxConnectionPerServer)",
             "--split=\(settings.maxConnectionPerServer)",
@@ -188,6 +223,7 @@ class EngineManager: ObservableObject {
             "--content-disposition-default-utf8=\(settings.contentDispositionDefaultUTF8 ? "true" : "false")",
             "--save-session-interval=\(settings.saveSessionInterval)",
         ]
+        appendLogArguments(to: &args, settings: settings, isAria2Next: isAria2Next)
 
         if !settings.userAgent.isEmpty {
             args.append("--user-agent=\(settings.userAgent)")
@@ -220,21 +256,29 @@ class EngineManager: ObservableObject {
         args.append("--bt-enable-lpd=true")
         args.append("--enable-peer-exchange=true")
         args.append("--bt-max-peers=\(settings.btMaxPeers)")
-        args.append("--bt-request-peer-speed-limit=\(settings.btRequestPeerSpeedLimit)K")
+        if !isAria2Next {
+            args.append("--bt-request-peer-speed-limit=\(settings.btRequestPeerSpeedLimit)K")
+        }
         args.append("--seed-ratio=\(settings.seedRatio)")
         if settings.seedTime > 0 {
             args.append("--seed-time=\(settings.seedTime)")
         }
 
-        if !settings.upnpEnabled {
+        if !settings.upnpEnabled && !isAria2Next {
             args.append("--disable-upnp=true")
         }
-        if settings.btSaveMetadata {
+        if isAria2Next {
+            args.append("--torrent-metadata=\(settings.aria2NextTorrentMetadataMode.rawValue)")
+        } else if settings.btSaveMetadata {
             args.append("--bt-save-metadata=true")
         }
         if settings.btForceEncryption {
-            args.append("--bt-require-crypto=true")
-            args.append("--bt-min-crypto-level=arc4")
+            if isAria2Next {
+                args.append("--bt-force-encryption=true")
+            } else {
+                args.append("--bt-require-crypto=true")
+                args.append("--bt-min-crypto-level=arc4")
+            }
         }
         if !settings.rpcSecret.isEmpty {
             args.append("--rpc-secret=\(settings.rpcSecret)")
@@ -253,6 +297,9 @@ class EngineManager: ObservableObject {
                 args.append("--all-proxy-passwd=\(settings.proxyPass)")
             }
         }
+        if isAria2Next {
+            args.append("--proxy-mode=\(settings.aria2NextProxyMode.rawValue)")
+        }
 
         let extraArguments = settings.extraAria2Arguments
             .components(separatedBy: .newlines)
@@ -262,10 +309,29 @@ class EngineManager: ObservableObject {
         return args
     }
 
+    private func appendLogArguments(
+        to args: inout [String],
+        settings: SettingsStore,
+        isAria2Next: Bool
+    ) {
+        if isAria2Next {
+            args.append("--log-file=\(logPath.path)")
+            args.append("--terminal-log-level=\(settings.aria2NextTerminalLogLevel.rawValue)")
+            args.append("--file-log-level=\(settings.aria2NextFileLogLevel.rawValue)")
+            args.append("--log-max-size=\(max(1, settings.aria2NextLogMaxSizeMB))M")
+            args.append("--log-max-files=\(max(1, settings.aria2NextLogMaxFiles))")
+        } else {
+            args.append("--log=\(logPath.path)")
+            args.append("--log-level=notice")
+        }
+    }
+
     private func resolveBinaryURL(settings: SettingsStore) -> URL? {
         switch settings.aria2BinarySource {
         case .bundled:
             return bundledBinaryURL()
+        case .bundledAria2Next:
+            return bundledAria2NextBinaryURL()
         case .commandLine:
             return commandLineBinaryURL()
         case .custom:
@@ -285,6 +351,19 @@ class EngineManager: ObservableObject {
         let archFolder = "x64"
 #endif
         return currentDir.appendingPathComponent("extra/darwin/\(archFolder)/engine/aria2c")
+    }
+
+    private func bundledAria2NextBinaryURL() -> URL? {
+        if let bundleBin = Bundle.main.url(forResource: "aria2-next", withExtension: nil) {
+            return bundleBin
+        }
+        let currentDir = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+#if arch(arm64)
+        let archFolder = "arm64"
+#else
+        let archFolder = "x64"
+#endif
+        return currentDir.appendingPathComponent("extra/darwin/\(archFolder)/engine/aria2-next")
     }
 
     private func commandLineBinaryURL() -> URL? {
@@ -307,6 +386,46 @@ class EngineManager: ObservableObject {
 
     private func removeManagedPID() {
         try? FileManager.default.removeItem(at: pidPath)
+    }
+
+    private func verifyBinary(at url: URL, expectedType: SettingsStore.Aria2BinarySource) -> Bool {
+        // Check if file is executable
+        guard FileManager.default.isExecutableFile(atPath: url.path) else {
+            print("[Engine] Binary is not executable: \(url.path)")
+            return false
+        }
+
+        // For aria2-next, verify it's actually aria2-next by checking version output
+        if expectedType == .bundledAria2Next {
+            let process = Process()
+            process.executableURL = url
+            process.arguments = ["--version"]
+
+            let pipe = Pipe()
+            process.standardOutput = pipe
+            process.standardError = pipe
+
+            do {
+                try process.run()
+                process.waitUntilExit()
+
+                let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                if let output = String(data: data, encoding: .utf8) {
+                    let isAria2Next = output.contains("Aria2 Next")
+                    if !isAria2Next {
+                        print("[Engine] Binary verification failed: expected Aria2 Next but got different version")
+                        print("[Engine] Version output: \(output.prefix(200))")
+                    }
+                    return isAria2Next
+                }
+            } catch {
+                print("[Engine] Failed to verify binary: \(error)")
+                return false
+            }
+        }
+
+        // For other types, basic executable check is sufficient
+        return true
     }
 
     private func stopPreviousManagedProcessIfNeeded() {

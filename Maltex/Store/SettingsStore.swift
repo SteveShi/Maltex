@@ -4,6 +4,7 @@ import SwiftUI
 class SettingsStore: ObservableObject {
     enum Aria2BinarySource: String, CaseIterable, Identifiable {
         case bundled
+        case bundledAria2Next
         case commandLine
         case custom
 
@@ -12,8 +13,53 @@ class SettingsStore: ObservableObject {
         var localizedName: LocalizedStringKey {
             switch self {
             case .bundled: "内置 Aria2"
+            case .bundledAria2Next: "内置 Aria2 Next（实验）"
             case .commandLine: "命令行 Aria2"
             case .custom: "自定义 Aria2"
+            }
+        }
+    }
+
+    enum Aria2NextProxyMode: String, CaseIterable, Identifiable {
+        case auto
+        case direct
+        case manual
+
+        var id: String { rawValue }
+
+        var localizedName: LocalizedStringKey {
+            switch self {
+            case .auto: "自动"
+            case .direct: "直连"
+            case .manual: "手动"
+            }
+        }
+    }
+
+    enum Aria2NextLogLevel: String, CaseIterable, Identifiable {
+        case trace
+        case debug
+        case info
+        case warn
+        case error
+        case critical
+        case off
+
+        var id: String { rawValue }
+    }
+
+    enum Aria2NextTorrentMetadataMode: String, CaseIterable, Identifiable {
+        case save
+        case start
+        case memory
+
+        var id: String { rawValue }
+
+        var localizedName: LocalizedStringKey {
+            switch self {
+            case .save: "仅保存"
+            case .start: "保存并开始"
+            case .memory: "仅内存启动"
             }
         }
     }
@@ -61,6 +107,18 @@ class SettingsStore: ObservableObject {
     @AppStorage("referer") var referer: String = ""
     @AppStorage("extraAria2Arguments") var extraAria2Arguments: String = ""
 
+    // Aria2 Next experimental settings
+    @AppStorage("aria2NextProxyMode") private var aria2NextProxyModeRaw: String =
+        Aria2NextProxyMode.manual.rawValue
+    @AppStorage("aria2NextTerminalLogLevel") private var aria2NextTerminalLogLevelRaw: String =
+        Aria2NextLogLevel.warn.rawValue
+    @AppStorage("aria2NextFileLogLevel") private var aria2NextFileLogLevelRaw: String =
+        Aria2NextLogLevel.info.rawValue
+    @AppStorage("aria2NextLogMaxSizeMB") var aria2NextLogMaxSizeMB: Int = 10
+    @AppStorage("aria2NextLogMaxFiles") var aria2NextLogMaxFiles: Int = 5
+    @AppStorage("aria2NextTorrentMetadataMode") private var aria2NextTorrentMetadataModeRaw: String =
+        Aria2NextTorrentMetadataMode.start.rawValue
+
     // Proxy
     @AppStorage("proxyEnabled") var proxyEnabled: Bool = false
     @AppStorage("proxyHost") var proxyHost: String = ""
@@ -84,6 +142,26 @@ class SettingsStore: ObservableObject {
     var aria2BinarySource: Aria2BinarySource {
         get { Aria2BinarySource(rawValue: aria2BinarySourceRaw) ?? .bundled }
         set { aria2BinarySourceRaw = newValue.rawValue }
+    }
+
+    var aria2NextProxyMode: Aria2NextProxyMode {
+        get { Aria2NextProxyMode(rawValue: aria2NextProxyModeRaw) ?? .manual }
+        set { aria2NextProxyModeRaw = newValue.rawValue }
+    }
+
+    var aria2NextTerminalLogLevel: Aria2NextLogLevel {
+        get { Aria2NextLogLevel(rawValue: aria2NextTerminalLogLevelRaw) ?? .warn }
+        set { aria2NextTerminalLogLevelRaw = newValue.rawValue }
+    }
+
+    var aria2NextFileLogLevel: Aria2NextLogLevel {
+        get { Aria2NextLogLevel(rawValue: aria2NextFileLogLevelRaw) ?? .info }
+        set { aria2NextFileLogLevelRaw = newValue.rawValue }
+    }
+
+    var aria2NextTorrentMetadataMode: Aria2NextTorrentMetadataMode {
+        get { Aria2NextTorrentMetadataMode(rawValue: aria2NextTorrentMetadataModeRaw) ?? .start }
+        set { aria2NextTorrentMetadataModeRaw = newValue.rawValue }
     }
 
     // Tracker Source Management

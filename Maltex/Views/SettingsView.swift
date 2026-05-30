@@ -271,9 +271,38 @@ struct Aria2SettingsView: View {
         )
     }
 
+    private var aria2NextProxyModeBinding: Binding<SettingsStore.Aria2NextProxyMode> {
+        Binding(
+            get: { settings.aria2NextProxyMode },
+            set: { settings.aria2NextProxyMode = $0 }
+        )
+    }
+
+    private var aria2NextTerminalLogLevelBinding: Binding<SettingsStore.Aria2NextLogLevel> {
+        Binding(
+            get: { settings.aria2NextTerminalLogLevel },
+            set: { settings.aria2NextTerminalLogLevel = $0 }
+        )
+    }
+
+    private var aria2NextFileLogLevelBinding: Binding<SettingsStore.Aria2NextLogLevel> {
+        Binding(
+            get: { settings.aria2NextFileLogLevel },
+            set: { settings.aria2NextFileLogLevel = $0 }
+        )
+    }
+
+    private var aria2NextTorrentMetadataModeBinding: Binding<SettingsStore.Aria2NextTorrentMetadataMode> {
+        Binding(
+            get: { settings.aria2NextTorrentMetadataMode },
+            set: { settings.aria2NextTorrentMetadataMode = $0 }
+        )
+    }
+
     private var sourceSummary: LocalizedStringKey {
         switch settings.aria2BinarySource {
         case .bundled: "使用 Maltex 随附的 aria2c，所有启动参数均由本页控制。"
+        case .bundledAria2Next: "使用 Maltex 随附的 aria2-next 实验内核，启动参数会按 Aria2 Next 兼容面生成。"
         case .commandLine: "使用 Homebrew 或系统路径中的 aria2c，仍由 Maltex 启动和停止。"
         case .custom: "使用指定路径的 aria2c，仍由 Maltex 启动和停止。"
         }
@@ -412,39 +441,90 @@ struct Aria2SettingsView: View {
     }
 
     private var sourceSection: some View {
-        SettingsSection("Aria2 来源") {
-            AlignedFormRow("内核来源") {
-                Picker("", selection: binarySourceBinding) {
-                    ForEach(SettingsStore.Aria2BinarySource.allCases) { source in
-                        Text(source.localizedName).tag(source)
+        Group {
+            SettingsSection("Aria2 来源") {
+                AlignedFormRow("内核来源") {
+                    Picker("", selection: binarySourceBinding) {
+                        ForEach(SettingsStore.Aria2BinarySource.allCases) { source in
+                            Text(source.localizedName).tag(source)
+                        }
                     }
+                    .pickerStyle(.segmented)
+                    .frame(maxWidth: 360)
                 }
-                .pickerStyle(.segmented)
-                .frame(maxWidth: 360)
-            }
 
-            AlignedFormRow("生效范围") {
-                Text(sourceSummary)
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
-            }
+                AlignedFormRow("生效范围") {
+                    Text(sourceSummary)
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                }
 
-            if settings.aria2BinarySource == .custom {
-                AlignedFormRow("自定义路径") {
-                    HStack {
-                        TextField("/opt/homebrew/bin/aria2c", text: $settings.customAria2Path)
-                            .textFieldStyle(.roundedBorder)
-                        Button("选择...") {
-                            let panel = NSOpenPanel()
-                            panel.allowsMultipleSelection = false
-                            panel.canChooseDirectories = false
-                            panel.canChooseFiles = true
-                            if panel.runModal() == .OK {
-                                settings.customAria2Path = panel.url?.path ?? settings.customAria2Path
+                if settings.aria2BinarySource == .custom {
+                    AlignedFormRow("自定义路径") {
+                        HStack {
+                            TextField("/opt/homebrew/bin/aria2c", text: $settings.customAria2Path)
+                                .textFieldStyle(.roundedBorder)
+                            Button("选择...") {
+                                let panel = NSOpenPanel()
+                                panel.allowsMultipleSelection = false
+                                panel.canChooseDirectories = false
+                                panel.canChooseFiles = true
+                                if panel.runModal() == .OK {
+                                    settings.customAria2Path = panel.url?.path ?? settings.customAria2Path
+                                }
                             }
                         }
                     }
                 }
+            }
+
+            if settings.aria2BinarySource == .bundledAria2Next {
+                aria2NextSection
+            }
+        }
+    }
+
+    private var aria2NextSection: some View {
+        Group {
+            SettingsSection("Aria2 Next 特性") {
+                AlignedFormRow("代理模式", description: "auto 使用环境变量，direct 禁用代理，manual 仅使用本页代理配置") {
+                    Picker("", selection: aria2NextProxyModeBinding) {
+                        ForEach(SettingsStore.Aria2NextProxyMode.allCases) { mode in
+                            Text(mode.localizedName).tag(mode)
+                        }
+                    }
+                    .frame(width: 180)
+                }
+
+                AlignedFormRow("远程种子元数据") {
+                    Picker("", selection: aria2NextTorrentMetadataModeBinding) {
+                        ForEach(SettingsStore.Aria2NextTorrentMetadataMode.allCases) { mode in
+                            Text(mode.localizedName).tag(mode)
+                        }
+                    }
+                    .frame(width: 180)
+                }
+
+                AlignedFormRow("终端日志级别") {
+                    Picker("", selection: aria2NextTerminalLogLevelBinding) {
+                        ForEach(SettingsStore.Aria2NextLogLevel.allCases) { level in
+                            Text(level.rawValue).tag(level)
+                        }
+                    }
+                    .frame(width: 140)
+                }
+
+                AlignedFormRow("文件日志级别") {
+                    Picker("", selection: aria2NextFileLogLevelBinding) {
+                        ForEach(SettingsStore.Aria2NextLogLevel.allCases) { level in
+                            Text(level.rawValue).tag(level)
+                        }
+                    }
+                    .frame(width: 140)
+                }
+
+                numericRow("日志文件大小", value: $settings.aria2NextLogMaxSizeMB, unit: "MB", width: 80)
+                numericRow("日志文件数量", value: $settings.aria2NextLogMaxFiles, unit: "轮转文件", width: 80)
             }
         }
     }
@@ -644,6 +724,17 @@ struct BTSettingsView: View {
     @State private var trackerEntries: [TrackerEntry] = []
     @State private var showProbePanel = false
 
+    private var isUsingAria2Next: Bool {
+        settings.aria2BinarySource == .bundledAria2Next
+    }
+
+    private var aria2NextTorrentMetadataModeBinding: Binding<SettingsStore.Aria2NextTorrentMetadataMode> {
+        Binding(
+            get: { settings.aria2NextTorrentMetadataMode },
+            set: { settings.aria2NextTorrentMetadataMode = $0 }
+        )
+    }
+
     private var trackerCount: Int {
         settings.trackerServers
             .components(separatedBy: .newlines)
@@ -676,9 +767,11 @@ struct BTSettingsView: View {
                             .textFieldStyle(.roundedBorder)
                             .frame(width: 80)
                     }
-                    AlignedFormRow("UPnP / NAT-PMP") {
-                        Toggle("", isOn: $settings.upnpEnabled)
-                            .toggleStyle(.switch)
+                    if !isUsingAria2Next {
+                        AlignedFormRow("UPnP / NAT-PMP") {
+                            Toggle("", isOn: $settings.upnpEnabled)
+                                .toggleStyle(.switch)
+                        }
                     }
                 }
 
@@ -688,7 +781,16 @@ struct BTSettingsView: View {
 
                 SettingsSection("进阶设置") {
                     VStack(alignment: .leading, spacing: 12) {
-                        Toggle("保存磁力链接元数据为种子文件 (.torrent)", isOn: $settings.btSaveMetadata)
+                        if isUsingAria2Next {
+                            Picker("远程种子元数据", selection: aria2NextTorrentMetadataModeBinding) {
+                                ForEach(SettingsStore.Aria2NextTorrentMetadataMode.allCases) { mode in
+                                    Text(mode.localizedName).tag(mode)
+                                }
+                            }
+                            .frame(maxWidth: 260)
+                        } else {
+                            Toggle("保存磁力链接元数据为种子文件 (.torrent)", isOn: $settings.btSaveMetadata)
+                        }
                         Toggle("自动开始下载磁力链接和种子内容", isOn: $settings.btAutoStart)
                         Toggle("强制 BT 加密 (BT Require Crypto)", isOn: $settings.btForceEncryption)
                         Toggle("启动时自动同步 Tracker", isOn: $settings.autoSyncTracker)
@@ -707,14 +809,16 @@ struct BTSettingsView: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
-                    AlignedFormRow("Peer 速度下限") {
-                        HStack {
-                            TextField("", value: $settings.btRequestPeerSpeedLimit, format: .number)
-                                .textFieldStyle(.roundedBorder)
-                                .frame(width: 80)
-                            Text("KB/s")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                    if !isUsingAria2Next {
+                        AlignedFormRow("Peer 速度下限") {
+                            HStack {
+                                TextField("", value: $settings.btRequestPeerSpeedLimit, format: .number)
+                                    .textFieldStyle(.roundedBorder)
+                                    .frame(width: 80)
+                                Text("KB/s")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                     }
                     AlignedFormRow("分享率") {

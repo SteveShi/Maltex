@@ -83,6 +83,21 @@ else
     exit 1
 fi
 
+# 5a. Copy experimental aria2-next engine
+echo "⚙️ Copying aria2-next experimental engine..."
+NEXT_ENGINE_PATH="extra/darwin/arm64/engine/aria2-next"
+if [ ! -f "$NEXT_ENGINE_PATH" ]; then
+    NEXT_ENGINE_PATH="extra/darwin/x64/engine/aria2-next"
+fi
+
+if [ -f "$NEXT_ENGINE_PATH" ]; then
+    cp "$NEXT_ENGINE_PATH" "${BUNDLE_PATH}/Contents/Resources/aria2-next"
+    chmod +x "${BUNDLE_PATH}/Contents/Resources/aria2-next"
+    echo "✅ Experimental engine integrated."
+else
+    echo "⚠️ aria2-next experimental engine not found; skipping."
+fi
+
 # 5b. Copy aria2.conf
 echo "📄 Copying aria2.conf..."
 CONF_PATH="extra/darwin/arm64/engine/aria2.conf"
