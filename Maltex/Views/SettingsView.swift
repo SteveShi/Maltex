@@ -450,7 +450,7 @@ struct Aria2SettingsView: View {
                         }
                     }
                     .pickerStyle(.segmented)
-                    .frame(maxWidth: 360)
+                    .frame(maxWidth: 480)
                 }
 
                 AlignedFormRow("生效范围") {
