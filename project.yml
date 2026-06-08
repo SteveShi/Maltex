@@ -16,7 +16,7 @@ packages:
     version: 5.11.2
   Sparkle:
     url: https://github.com/sparkle-project/Sparkle
-    version: 2.9.0
+    from: 2.0.0
 
 targets:
   Maltex:
@@ -41,7 +41,7 @@ targets:
         INFOPLIST_FILE: Maltex/Info.plist
         PRODUCT_BUNDLE_IDENTIFIER: app.maltex.native
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        SWIFT_VERSION: 6.2
+        SWIFT_VERSION: 6.0
         MARKETING_VERSION: 1.1.5
         CURRENT_PROJECT_VERSION: 1150
         ENABLE_HARDENED_RUNTIME: YES
@@ -67,7 +67,7 @@ targets:
         INFOPLIST_FILE: MaltexExtension/Info.plist
         PRODUCT_BUNDLE_IDENTIFIER: app.maltex.native.extension
         GENERATE_INFOPLIST_FILE: NO
-        SWIFT_VERSION: 6.2
+        SWIFT_VERSION: 6.0
         MARKETING_VERSION: 1.1.5
         CURRENT_PROJECT_VERSION: 1150
         ENABLE_HARDENED_RUNTIME: YES
@@ -83,7 +83,7 @@ targets:
       - path: MaltexTests
     settings:
       base:
-        SWIFT_VERSION: 6.2
+        SWIFT_VERSION: 6.0
         GENERATE_INFOPLIST_FILE: YES
     dependencies:
       - target: Maltex
