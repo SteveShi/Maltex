@@ -80,7 +80,19 @@ struct TaskDetailView: View {
                                 value:
                                     "\(ByteCountFormatterUtil.string(fromByteCount: task.uploadSpeed))/s"
                             )
+                            if task.status == .active {
+                                DetailGridRow(
+                                    label: "剩余时间",
+                                    value: task.remainingSeconds.map {
+                                        DurationFormatterUtil.string(fromSeconds: $0)
+                                    } ?? String(localized: "计算中"))
+                            }
                             DetailGridRow(label: "连接数", value: "\(task.connections)")
+                            if let addedDate = task.addedDate {
+                                DetailGridRow(
+                                    label: "添加时间",
+                                    value: DateTimeFormatterUtil.string(from: addedDate))
+                            }
                         }
                         .padding()
                         .background(Color.secondary.opacity(0.05))

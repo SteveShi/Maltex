@@ -18,7 +18,19 @@ struct DownloadTask: Identifiable, Codable, Hashable {
     var files: [DownloadFile]
     var bittorrent: BittorrentInfo?
 
+    // 由 TaskStore 在合并时注入，不参与 RPC 解码与历史持久化。
+    var addedDate: Date?
+    var completedDate: Date?
+
     var id: String { gid }
+
+    /// 预计剩余下载时间（秒）；仅在下载中且速度有效时可用。
+    var remainingSeconds: Int64? {
+        guard status == .active, downloadSpeed > 0, totalLength > 0 else { return nil }
+        let remaining = totalLength - completedLength
+        guard remaining > 0 else { return nil }
+        return remaining / downloadSpeed
+    }
 
     // Hashable/Equatable based on gid and key progress fields to ensure UI refresh
     static func == (lhs: DownloadTask, rhs: DownloadTask) -> Bool {

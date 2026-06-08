@@ -30,6 +30,11 @@ class TaskStore: ObservableObject {
     @Published var shouldPresentEngineError = false
     @Published var lastAddedGid: String?
 
+    /// 当前所有任务的实时下载速度之和（字节/秒），用于 Dock 图标等聚合展示。
+    var totalDownloadSpeed: Int64 {
+        tasks.reduce(Int64(0)) { $0 + $1.downloadSpeed }
+    }
+
     // History
     let historyStore = HistoryStore()
 
@@ -40,6 +45,12 @@ class TaskStore: ObservableObject {
 
     // 复用 JSONDecoder 避免每次新建
     private let decoder = JSONDecoder()
+
+    // 任务添加/完成时间（aria2 RPC 不提供，由应用记录并持久化）
+    private static let addedDatesKey = "taskAddedDates"
+    private static let completedDatesKey = "taskCompletedDates"
+    private var addedDates: [String: Date] = [:]
+    private var completedDates: [String: Date] = [:]
 
     // 用于 addUri 等动作的串行队列，避免对单线程 RPC 形成并发风暴
     private var actionQueueTask: Task<Void, Never>? = nil
@@ -58,7 +69,24 @@ class TaskStore: ObservableObject {
             port: UInt16(actualPort),
             token: actualSecret.isEmpty ? nil : actualSecret)
 
+        loadTaskDates()
         startPolling()
+    }
+
+    private func loadTaskDates() {
+        if let raw = UserDefaults.standard.dictionary(forKey: Self.addedDatesKey) {
+            addedDates = raw.compactMapValues { ($0 as? Double).map { Date(timeIntervalSince1970: $0) } }
+        }
+        if let raw = UserDefaults.standard.dictionary(forKey: Self.completedDatesKey) {
+            completedDates = raw.compactMapValues { ($0 as? Double).map { Date(timeIntervalSince1970: $0) } }
+        }
+    }
+
+    private func saveTaskDates() {
+        UserDefaults.standard.set(
+            addedDates.mapValues { $0.timeIntervalSince1970 }, forKey: Self.addedDatesKey)
+        UserDefaults.standard.set(
+            completedDates.mapValues { $0.timeIntervalSince1970 }, forKey: Self.completedDatesKey)
     }
 
     func startEngineOnLaunchIfNeeded(settings: SettingsStore) async {
@@ -366,6 +394,8 @@ class TaskStore: ObservableObject {
 
     private func mergeTasks(_ newTasks: [DownloadTask]) {
         let settings = SettingsStore()
+        let now = Date()
+        var datesChanged = false
 
         // 1. Unique engine tasks by GID, prefer those with non-zero length
         var engineTasksMap: [String: DownloadTask] = [:]
@@ -379,30 +409,56 @@ class TaskStore: ObservableObject {
             }
         }
 
-        let currentEngineTasks = Array(engineTasksMap.values)
+        var currentEngineTasks = Array(engineTasksMap.values)
         let oldTasksMap = self.tasks.reduce(into: [String: DownloadTask]()) { $0[$1.gid] = $1 }
 
-        for task in currentEngineTasks {
-            if let oldTask = oldTasksMap[task.gid] {
-                // Status transition: active -> complete
-                if oldTask.status != .complete && task.status == .complete {
-                    if settings.notificationEnabled {
-                        sendCompletionNotification(for: task)
-                    }
-                    // Archive completed task
-                    historyStore.add(task)
+        for index in currentEngineTasks.indices {
+            let gid = currentEngineTasks[index].gid
+
+            // 首次见到任务时记录添加时间
+            if addedDates[gid] == nil {
+                addedDates[gid] = now
+                datesChanged = true
+            }
+
+            // 完成时记录完成时间（含已经处于完成态但尚无记录的情况）
+            if currentEngineTasks[index].status == .complete && completedDates[gid] == nil {
+                completedDates[gid] = now
+                datesChanged = true
+            }
+
+            currentEngineTasks[index].addedDate = addedDates[gid]
+            currentEngineTasks[index].completedDate = completedDates[gid]
+
+            // Status transition: -> complete
+            if let oldTask = oldTasksMap[gid], oldTask.status != .complete,
+                currentEngineTasks[index].status == .complete
+            {
+                if settings.notificationEnabled {
+                    sendCompletionNotification(for: currentEngineTasks[index])
                 }
+                // Archive completed task
+                historyStore.add(currentEngineTasks[index])
             }
         }
 
-        // 2. Merge history tasks that are NOT in engine
+        // 2. Merge history tasks that are NOT in engine（从持久化映射回填时间）
         let engineGids = Set(engineTasksMap.keys)
-        let historyTasksNotInEngine = historyStore.archivedTasks.filter {
-            !engineGids.contains($0.gid)
-        }
+        let historyTasksNotInEngine = historyStore.archivedTasks
+            .filter { !engineGids.contains($0.gid) }
+            .map { task -> DownloadTask in
+                var task = task
+                task.addedDate = addedDates[task.gid]
+                task.completedDate = completedDates[task.gid]
+                return task
+            }
 
         var finalTasks = currentEngineTasks
         finalTasks.append(contentsOf: historyTasksNotInEngine)
+
+        if datesChanged {
+            saveTaskDates()
+        }
 
         self.tasks = finalTasks.sorted {
             $0.gid > $1.gid
@@ -450,11 +506,12 @@ class TaskStore: ObservableObject {
         }
     }
 
-    func addUri(_ uris: [String]) {
+    func addUri(_ uris: [String], dir: String? = nil) {
         let settings = SettingsStore()
         var options: [String: String] = [:]
-        if !settings.downloadPath.isEmpty {
-            options["dir"] = settings.downloadPath
+        let targetDir = (dir?.isEmpty == false) ? dir! : settings.downloadPath
+        if !targetDir.isEmpty {
+            options["dir"] = targetDir
         }
 
         // 每个 URL 串行发送 addUri 请求：aria2 是单线程 RPC，
@@ -489,12 +546,12 @@ class TaskStore: ObservableObject {
         try? await Task.sleep(nanoseconds: 50_000_000)
     }
 
-    func addTorrent(at path: String) {
+    func addTorrent(at path: String, dir: String? = nil) {
         let settings = SettingsStore()
-        addTorrent(at: path, paused: !settings.btAutoStart)
+        addTorrent(at: path, paused: !settings.btAutoStart, dir: dir)
     }
 
-    func addTorrent(at path: String, paused: Bool) {
+    func addTorrent(at path: String, paused: Bool, dir: String? = nil) {
         // 异步读取种子文件，避免阻塞主线程
         Task { @MainActor in
             let data: Data? = await Task.detached { () -> Data? in
@@ -516,8 +573,9 @@ class TaskStore: ObservableObject {
             if paused {
                 options["pause"] = "true"
             }
-            if !settings.downloadPath.isEmpty {
-                options["dir"] = settings.downloadPath
+            let targetDir = (dir?.isEmpty == false) ? dir! : settings.downloadPath
+            if !targetDir.isEmpty {
+                options["dir"] = targetDir
             }
 
             // Aria2 RPC addTorrent(torrent, uris, options)
@@ -616,6 +674,13 @@ class TaskStore: ObservableObject {
         // 先在本地移除提供即时反馈
         gids.forEach { historyStore.remove(gid: $0) }
         tasks.removeAll(where: { gids.contains($0.gid) })
+
+        // 清理已删除任务的时间记录
+        for gid in gids {
+            addedDates[gid] = nil
+            completedDates[gid] = nil
+        }
+        saveTaskDates()
 
         for gid in gids {
             aria2.call(method: .removeDownloadResult, params: [AnyEncodable(gid)]).response {

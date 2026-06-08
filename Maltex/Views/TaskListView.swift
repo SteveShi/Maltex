@@ -26,6 +26,7 @@ struct TaskListView: View {
             return taskStore.tasks.filter { $0.status == .error }
         case "completed":
             return taskStore.tasks.filter { $0.status == .complete }
+                .sorted { ($0.completedDate ?? .distantPast) > ($1.completedDate ?? .distantPast) }
         default:
             return taskStore.tasks
         }
@@ -162,6 +163,13 @@ struct TaskRow: View {
                 HStack {
                     Text(formatBytes(task.completedLength) + " / " + formatBytes(task.totalLength))
                     Spacer()
+                    if let remaining = task.remainingSeconds {
+                        Label(
+                            DurationFormatterUtil.string(fromSeconds: remaining),
+                            systemImage: "clock"
+                        )
+                        .foregroundColor(.secondary)
+                    }
                     Text(formatBytes(task.downloadSpeed) + "/s")
                         .foregroundColor(.secondary)
                 }

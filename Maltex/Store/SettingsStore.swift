@@ -73,6 +73,7 @@ class SettingsStore: ObservableObject {
     @AppStorage("launchAtLogin") var launchAtLogin: Bool = false
     @AppStorage("autoResumeTasks") var autoResumeTasks: Bool = true
     @AppStorage("notificationEnabled") var notificationEnabled: Bool = true
+    @AppStorage("showSpeedInDock") var showSpeedInDock: Bool = true
 
     // RPC
     @AppStorage("rpcHost") var rpcHost: String = "127.0.0.1"

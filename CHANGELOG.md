@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.6] - 2026-06-09
+
+### Added
+- **Download Location Picker**: The new download dialog now lets you choose a save location per task, pre-filled with the default download path.
+- **Live Download Speed in Dock**: The Dock icon can display the aggregate real-time download speed, with a toggle in General settings.
+- **Estimated Time Remaining**: The download list and task detail now show the estimated time remaining for active downloads.
+- **Task Added Time**: The task detail view now shows when a task was added.
+
+### Changed
+- **Completed List Ordering**: Completed downloads are now sorted by completion time, with the most recent at the top.
+
+---
+
+### Chinese
+### 新增
+- **下载位置选择**: 新建下载任务界面支持为每个任务单独选择保存位置，默认填入设置中的下载路径。
+- **Dock 实时下载速度**: Dock 图标可显示当前总下载速度，可在"常规"设置中开关。
+- **预计剩余时间**: 下载列表与任务详情会显示下载中任务的预计剩余时间。
+- **任务添加时间**: 任务详情新增任务添加时间的显示。
+
+### 变更
+- **已完成列表排序**: 已完成的下载现按完成时间排序，最新完成的排在最前。
+
+---
+
 ## [1.1.5] - 2026-05-31
 
 ### Added

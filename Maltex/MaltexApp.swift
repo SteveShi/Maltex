@@ -33,6 +33,7 @@ struct MaltexApp: App {
     @StateObject private var settingsStore = SettingsStore()
     @StateObject private var updater = Updater()
     @State private var didRunLaunchTasks = false
+    @State private var dockSpeedController = DockSpeedController()
 
     var body: some Scene {
         WindowGroup {
@@ -58,8 +59,19 @@ struct MaltexApp: App {
                 .task {
                     guard !didRunLaunchTasks else { return }
                     didRunLaunchTasks = true
+                    dockSpeedController.setEnabled(settingsStore.showSpeedInDock)
                     await taskStore.startEngineOnLaunchIfNeeded(settings: settingsStore)
                     await autoSyncTrackersOnLaunch()
+                }
+                .onReceive(taskStore.$tasks) { tasks in
+                    let total = tasks.reduce(Int64(0)) { $0 + $1.downloadSpeed }
+                    dockSpeedController.update(downloadSpeed: total)
+                }
+                .onChange(of: settingsStore.showSpeedInDock) { _, enabled in
+                    dockSpeedController.setEnabled(enabled)
+                    if enabled {
+                        dockSpeedController.update(downloadSpeed: taskStore.totalDownloadSpeed)
+                    }
                 }
         }
         .windowToolbarStyle(.unified)

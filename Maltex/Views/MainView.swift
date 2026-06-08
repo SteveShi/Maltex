@@ -18,6 +18,7 @@ struct MainView: View {
         .sheet(isPresented: $isShowingAddTask) {
             AddTaskView()
                 .environmentObject(taskStore)
+                .environmentObject(settings)
         }
         .sheet(item: $confirmTask) { snapshotTask in
             TorrentConfirmView(task: snapshotTask) { path, selectedIndices in

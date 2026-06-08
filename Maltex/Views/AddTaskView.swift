@@ -5,8 +5,10 @@ struct AddTaskView: View {
     @Environment(\.dismiss) var dismiss
     @State private var urls: String = ""
     @State private var selectedTorrentPath: String?
+    @State private var downloadPath: String = ""
     @FocusState private var isFieldFocused: Bool
     @EnvironmentObject var taskStore: TaskStore
+    @EnvironmentObject var settings: SettingsStore
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -55,6 +57,24 @@ struct AddTaskView: View {
                 Spacer()
             }
 
+            VStack(alignment: .leading, spacing: 8) {
+                Text("下载位置")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+
+                HStack {
+                    TextField("", text: $downloadPath)
+                        .textFieldStyle(.roundedBorder)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+
+                    Button("选择...") {
+                        selectDownloadFolder()
+                    }
+                    .buttonStyle(.bordered)
+                }
+            }
+
             HStack {
                 Button("取消") {
                     dismiss()
@@ -78,6 +98,10 @@ struct AddTaskView: View {
         .padding()
         .frame(width: 480)
         .onAppear {
+            if downloadPath.isEmpty {
+                downloadPath = settings.downloadPath
+            }
+
             // Check clipboard
             if let clipboardString = NSPasteboard.general.string(forType: .string) {
                 let trimmed = clipboardString.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -105,9 +129,26 @@ struct AddTaskView: View {
         }
     }
 
+    private func selectDownloadFolder() {
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.canCreateDirectories = true
+        if !downloadPath.isEmpty {
+            panel.directoryURL = URL(fileURLWithPath: downloadPath)
+        }
+        if panel.runModal() == .OK {
+            downloadPath = panel.url?.path ?? downloadPath
+        }
+    }
+
     private func submitTasks() {
+        let trimmedDir = downloadPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        let targetDir = trimmedDir.isEmpty ? nil : trimmedDir
+
         if let torrentPath = selectedTorrentPath {
-            taskStore.addTorrent(at: torrentPath)
+            taskStore.addTorrent(at: torrentPath, dir: targetDir)
         }
 
         let urlList = urls.components(separatedBy: .newlines)
@@ -115,7 +156,7 @@ struct AddTaskView: View {
             .filter { !$0.isEmpty }
 
         if !urlList.isEmpty {
-            taskStore.addUri(urlList)
+            taskStore.addUri(urlList, dir: targetDir)
         }
 
         dismiss()
