@@ -422,6 +422,7 @@ struct Aria2SettingsView: View {
                             Text(source.localizedName).tag(source)
                         }
                     }
+                    .labelsHidden()
                     .frame(width: 280)
                 }
 

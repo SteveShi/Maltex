@@ -6,6 +6,20 @@ struct TaskListView: View {
     @Binding var selectedTaskGids: Set<String>
     @Binding var isShowingAddTask: Bool
     @EnvironmentObject var taskStore: TaskStore
+    @State private var pendingDeleteGids: Set<String> = []
+    @State private var showDeleteConfirm = false
+
+    private func copyToClipboard(_ text: String) {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(text, forType: .string)
+    }
+
+    private func requestDelete(_ gids: Set<String>) {
+        guard !gids.isEmpty else { return }
+        pendingDeleteGids = gids
+        showDeleteConfirm = true
+    }
 
     var filteredTasks: [DownloadTask] {
         switch status {
@@ -67,20 +81,27 @@ struct TaskListView: View {
                                     Label(String(localized: "停止"), systemImage: "stop.fill")
                                 }
 
+                                let downloadURLs = task.downloadURLs
+                                if !downloadURLs.isEmpty {
+                                    Button {
+                                        copyToClipboard(downloadURLs.joined(separator: "\n"))
+                                    } label: {
+                                        Label(String(localized: "复制下载链接"), systemImage: "link")
+                                    }
+                                }
+
                                 if let link = task.shareLink {
                                     Button {
-                                        let pasteboard = NSPasteboard.general
-                                        pasteboard.clearContents()
-                                        pasteboard.setString(link, forType: .string)
+                                        copyToClipboard(link)
                                     } label: {
-                                        Label(String(localized: "复制链接"), systemImage: "link")
+                                        Label(String(localized: "复制磁力/ED2K 链接"), systemImage: "link.badge.plus")
                                     }
                                 }
 
                                 Divider()
 
                                 Button(role: .destructive) {
-                                    taskStore.removeTasks(gids: [task.gid])
+                                    requestDelete([task.gid])
                                 } label: {
                                     Label(String(localized: "删除"), systemImage: "trash.fill")
                                 }
@@ -131,8 +152,7 @@ struct TaskListView: View {
                 .help(String(localized: "停止任务"))
 
                 Button(action: {
-                    taskStore.removeTasks(gids: selectedTaskGids)
-                    selectedTaskGids.removeAll()
+                    requestDelete(selectedTaskGids)
                 }) {
                     Label(String(localized: "删除"), systemImage: "trash.fill")
                 }
@@ -149,6 +169,29 @@ struct TaskListView: View {
                 }
                 .help(String(localized: "刷新列表"))
             }
+        }
+        .alert("删除任务", isPresented: $showDeleteConfirm) {
+            Button(role: .destructive) {
+                let gids = pendingDeleteGids
+                taskStore.removeTasks(gids: gids, deleteFiles: true)
+                selectedTaskGids.subtract(gids)
+                pendingDeleteGids = []
+            } label: {
+                Text("删除任务和文件")
+            }
+            Button(String(localized: "仅删除任务")) {
+                let gids = pendingDeleteGids
+                taskStore.removeTasks(gids: gids, deleteFiles: false)
+                selectedTaskGids.subtract(gids)
+                pendingDeleteGids = []
+            }
+            Button(role: .cancel) {
+                pendingDeleteGids = []
+            } label: {
+                Text("取消")
+            }
+        } message: {
+            Text("将删除 \(pendingDeleteGids.count) 个任务。“删除任务和文件”会一并删除已下载到磁盘的文件，且不可恢复。")
         }
     }
 }

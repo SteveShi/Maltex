@@ -664,12 +664,15 @@ class TaskStore: ObservableObject {
             }
     }
 
-    func removeTasks(gids: Set<String>) {
+    func removeTasks(gids: Set<String>, deleteFiles: Bool = false) {
         // 保留快照以便服务端失败时回滚 UI 状态
         let removedTasksSnapshot: [DownloadTask] = self.tasks.filter { gids.contains($0.gid) }
         let removedHistorySnapshot: [DownloadTask] = self.historyStore.archivedTasks.filter {
             gids.contains($0.gid)
         }
+
+        // 删除磁盘文件前先记录待删任务快照（含文件路径）
+        let tasksForFileDeletion = deleteFiles ? removedTasksSnapshot : []
 
         // 先在本地移除提供即时反馈
         gids.forEach { historyStore.remove(gid: $0) }
@@ -728,6 +731,41 @@ class TaskStore: ObservableObject {
                     }
                 }
             }
+        }
+
+        // 延迟删除磁盘文件：先让 removeDownloadResult/forceRemove 停止引擎对文件的写入
+        if deleteFiles, !tasksForFileDeletion.isEmpty {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
+                self?.removeFilesOnDisk(for: tasksForFileDeletion)
+            }
+        }
+    }
+
+    /// 删除任务对应的磁盘文件及其 aria2 控制文件，并清理由此变空的下载子目录。
+    private func removeFilesOnDisk(for tasks: [DownloadTask]) {
+        let fm = FileManager.default
+        for task in tasks {
+            var parentDirs = Set<String>()
+            for file in task.files where !file.path.isEmpty {
+                try? fm.removeItem(atPath: file.path)
+                try? fm.removeItem(atPath: file.path + ".aria2")
+                parentDirs.insert((file.path as NSString).deletingLastPathComponent)
+            }
+            let downloadRoot = (task.dir as NSString).standardizingPath
+            for dir in parentDirs {
+                removeEmptyDirectories(from: dir, stoppingAt: downloadRoot, fm: fm)
+            }
+        }
+    }
+
+    /// 从 startDir 向上删除已变空的目录，直到（不含）下载根目录 root 为止；只删除空目录，确保安全。
+    private func removeEmptyDirectories(from startDir: String, stoppingAt root: String, fm: FileManager) {
+        var current = (startDir as NSString).standardizingPath
+        while current.count > root.count, current.hasPrefix(root + "/") {
+            let contents = (try? fm.contentsOfDirectory(atPath: current)) ?? []
+            guard contents.allSatisfy({ $0 == ".DS_Store" }) else { break }
+            try? fm.removeItem(atPath: current)
+            current = (current as NSString).deletingLastPathComponent
         }
     }
 

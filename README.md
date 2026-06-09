@@ -15,13 +15,17 @@ Maltex is a native rewrite of the popular [Motrix](https://motrix.app) download 
 ## 🚀 Key Features
 
 - **Pure Native UI**: Built entirely with SwiftUI for a smooth, responsive interface that matches the macOS aesthetic.
-- **Versatile Protocol Support**: Effortlessly handle HTTP, FTP, BitTorrent, Magnet links, and more.
+- **Versatile Protocol Support**: Effortlessly handle HTTP, FTP, BitTorrent, and Magnet links — plus ED2K and Thunder links when the experimental engine is enabled.
 - **High Performance**: Powered by a highly optimized `aria2` core, ensuring maximum speed with minimal memory footprint.
-- **Experimental aria2-next Engine**: Optional support for the next-generation aria2-next engine with enhanced features:
-  - Advanced proxy modes (auto/direct/manual)
-  - Flexible torrent metadata handling
-  - Granular logging controls with rotation
-  - Automatic fallback to stable aria2 if issues occur
+- **Experimental aria2-next Engine**: Optionally switch to the [aria2-next](https://github.com/AnInsomniacy/aria2-next) engine for capabilities the bundled `aria2c` does not offer:
+  - **ED2K links** (`ed2k://`)
+  - **Thunder links** (`thunder://`) with native decoding
+  - Decimal units for speed limits (e.g. `1.5M`)
+  - Share-only seeding control (`--detach-share-only`) for BitTorrent and ED2K
+  - Copy the magnet / ED2K link directly from a task
+  - Automatic fallback to the stable aria2 if the engine fails to start
+
+  > Enable it under **Preferences → Aria2 → Engine Source**. Since aria2-next 2.4.x is realigned to the standard aria2 baseline, all other options behave the same as the bundled engine.
 - **Smart Engine Management**: Automatically handles the lifecycle of the download engine—just open the app and start downloading.
 - **Deep System Integration**:
   - **Menu Bar Extra**: Monitor real-time download/upload speeds and manage tasks directly from the menu bar.

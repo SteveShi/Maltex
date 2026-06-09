@@ -145,6 +145,7 @@ struct MaltexApp: App {
             }
         } else if urlString.hasPrefix("magnet:")
             || urlString.hasPrefix("thunder:")
+            || urlString.hasPrefix("ed2k:")
             || urlString.hasPrefix("http://")
             || urlString.hasPrefix("https://")
         {

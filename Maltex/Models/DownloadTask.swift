@@ -43,6 +43,25 @@ struct DownloadTask: Identifiable, Codable, Hashable {
         return nil
     }
 
+    /// 直链下载源地址（HTTP/FTP 等），去重，用于"复制下载链接"。
+    var downloadURLs: [String] {
+        let directSchemes: Set<String> = ["http", "https", "ftp", "ftps", "sftp"]
+        var seen = Set<String>()
+        var result: [String] = []
+        for file in files {
+            for entry in file.uris {
+                let uri = entry.uri
+                guard !uri.isEmpty, !seen.contains(uri),
+                    let scheme = URL(string: uri)?.scheme?.lowercased(),
+                    directSchemes.contains(scheme)
+                else { continue }
+                seen.insert(uri)
+                result.append(uri)
+            }
+        }
+        return result
+    }
+
     // Hashable/Equatable based on gid and key progress fields to ensure UI refresh
     static func == (lhs: DownloadTask, rhs: DownloadTask) -> Bool {
         lhs.gid == rhs.gid &&

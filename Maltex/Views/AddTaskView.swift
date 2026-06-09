@@ -10,6 +10,34 @@ struct AddTaskView: View {
     @EnvironmentObject var taskStore: TaskStore
     @EnvironmentObject var settings: SettingsStore
 
+    /// ED2K 与迅雷链接仅实验内核 aria2-next 支持。
+    private var supportsExperimentalLinks: Bool {
+        settings.aria2BinarySource == .bundledAria2Next
+    }
+
+    private var inputHint: String {
+        supportsExperimentalLinks
+            ? String(localized: "输入下载链接 (HTTP/HTTPS/Magnet/ED2K/迅雷)")
+            : String(localized: "输入下载链接 (HTTP/HTTPS/Magnet)")
+    }
+
+    /// 输入内容是否包含仅实验内核支持的链接（ED2K / 迅雷）。
+    private var hasExperimentalOnlyLinks: Bool {
+        let lowered = urls.lowercased()
+        return lowered.contains("ed2k://") || lowered.contains("thunder://")
+    }
+
+    /// 标准内核下输入了 ED2K / 迅雷链接时需要警告。
+    private var showsKernelWarning: Bool {
+        !supportsExperimentalLinks && hasExperimentalOnlyLinks
+    }
+
+    private func switchToExperimentalKernel() {
+        settings.aria2BinarySource = .bundledAria2Next
+        EngineManager.shared.restart(settings: settings)
+        taskStore.reconnectToConfiguredRPCAfterEngineRestart()
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("新建下载任务")
@@ -18,7 +46,7 @@ struct AddTaskView: View {
                 .padding(.top, 8)
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("输入下载链接 (HTTP/HTTPS/Magnet)")
+                Text(inputHint)
                     .font(.caption)
                     .foregroundColor(.secondary)
 
@@ -31,6 +59,28 @@ struct AddTaskView: View {
                         RoundedRectangle(cornerRadius: 6)
                             .stroke(Color.secondary.opacity(0.3))
                     )
+            }
+
+            if showsKernelWarning {
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundColor(.orange)
+                    Text("ED2K / 迅雷链接需要实验内核 aria2-next，当前为标准内核，添加后会下载失败。")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 8)
+                    Button("切换到实验内核") {
+                        switchToExperimentalKernel()
+                    }
+                    .buttonStyle(.link)
+                    .fixedSize()
+                }
+                .padding(8)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(Color.orange.opacity(0.12))
+                )
             }
 
             HStack {
@@ -107,6 +157,7 @@ struct AddTaskView: View {
                 let trimmed = clipboardString.trimmingCharacters(in: .whitespacesAndNewlines)
                 if trimmed.hasPrefix("magnet:") || trimmed.hasPrefix("http://")
                     || trimmed.hasPrefix("https://") || trimmed.hasPrefix("thunder://")
+                    || trimmed.hasPrefix("ed2k://")
                 {
                     urls = trimmed
                 }

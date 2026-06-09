@@ -13,7 +13,7 @@ struct TaskDetailView: View {
                 Text("任务详情")
                     .font(.headline)
                 Spacer()
-                if let link = task.shareLink {
+                if let link = task.downloadURLs.first ?? task.shareLink {
                     Button {
                         let pasteboard = NSPasteboard.general
                         pasteboard.clearContents()

@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.8] - 2026-06-09
+
+### Added
+- Copy the direct download link (HTTP/FTP source URL) from the task list right-click menu and the task detail view.
+- Optionally delete the downloaded files from disk when removing a task. Deleting now shows a confirmation with “Delete task and files” / “Delete task only”.
+- ED2K link support: the new-task window detects `ed2k://` from the clipboard, and Maltex registers as a handler for `ed2k://` links (works with the experimental aria2-next engine).
+- The new-task window now shows an engine-aware hint, and warns — with a one-click engine switch — when ED2K/Thunder links are entered while the standard engine is active.
+
+### Changed
+- Aligned the engine-source picker with the description text below it in Aria2 settings.
+- Updated the README (English/Chinese) to reflect the actual aria2-next capabilities (ED2K, Thunder, decimal speed limits, share-only seeding, copy link).
+
+---
+
+### Chinese
+### 新增
+- 在任务列表右键菜单与任务详情中复制直链下载地址（HTTP/FTP 源地址）。
+- 删除任务时可选择同步删除已下载到磁盘的文件，删除会弹出确认：“删除任务和文件” / “仅删除任务”。
+- 支持 ED2K 链接：新建任务窗口自动识别剪贴板中的 `ed2k://`，并将 Maltex 注册为 `ed2k://` 链接的处理程序（需配合实验内核 aria2-next）。
+- 新建任务窗口根据当前内核显示链接提示；在标准内核下输入 ED2K/迅雷链接时给出警告，并提供一键切换到实验内核。
+
+### 变更
+- 修正 Aria2 设置中“内核来源”选项框与下方说明文字的对齐。
+- 更新中英文 README，反映 aria2-next 的真实能力（ED2K、迅雷、小数限速、仅做种控制、复制链接）。
+
+---
+
 ## [1.1.7] - 2026-06-09
 
 ### Fixed
