@@ -17,6 +17,7 @@ struct DownloadTask: Identifiable, Codable, Hashable {
     var dir: String
     var files: [DownloadFile]
     var bittorrent: BittorrentInfo?
+    var ed2k: Ed2kInfo?
 
     // 由 TaskStore 在合并时注入，不参与 RPC 解码与历史持久化。
     var addedDate: Date?
@@ -30,6 +31,16 @@ struct DownloadTask: Identifiable, Codable, Hashable {
         let remaining = totalLength - completedLength
         guard remaining > 0 else { return nil }
         return remaining / downloadSpeed
+    }
+
+    /// 可分享链接：优先用 aria2-next 2.4.4+ 提供的字段，BT 任务可由 infoHash 兜底构造磁力链接。
+    var shareLink: String? {
+        if let magnet = bittorrent?.magnetLink, !magnet.isEmpty { return magnet }
+        if let link = ed2k?.ed2kLink, !link.isEmpty { return link }
+        if bittorrent != nil, let hash = infoHash, !hash.isEmpty {
+            return "magnet:?xt=urn:btih:\(hash)"
+        }
+        return nil
     }
 
     // Hashable/Equatable based on gid and key progress fields to ensure UI refresh
@@ -52,7 +63,7 @@ struct DownloadTask: Identifiable, Codable, Hashable {
     enum CodingKeys: String, CodingKey {
         case gid, status, totalLength, completedLength, uploadLength
         case downloadSpeed, uploadSpeed, infoHash, numSeeders, connections
-        case errorCode, followedBy, belongsTo, dir, files, bittorrent
+        case errorCode, followedBy, belongsTo, dir, files, bittorrent, ed2k
     }
 
     init(from decoder: Decoder) throws {
@@ -94,6 +105,7 @@ struct DownloadTask: Identifiable, Codable, Hashable {
         dir = try container.decode(String.self, forKey: .dir)
         files = try container.decode([DownloadFile].self, forKey: .files)
         bittorrent = try container.decodeIfPresent(BittorrentInfo.self, forKey: .bittorrent)
+        ed2k = try container.decodeIfPresent(Ed2kInfo.self, forKey: .ed2k)
     }
 
     enum TaskStatus: String, Codable {
@@ -161,6 +173,13 @@ struct BittorrentInfo: Codable, Hashable {
     let creationDate: Int64?
     let mode: String?
     let info: BittorrentDetail?
+    // aria2-next 2.4.4+ 在任务状态中提供
+    let magnetLink: String?
+}
+
+struct Ed2kInfo: Codable, Hashable {
+    // aria2-next 2.4.4+ 在 ED2K 任务状态中提供
+    let ed2kLink: String?
 }
 
 struct BittorrentDetail: Codable, Hashable {

@@ -3,8 +3,10 @@ import AppKit
 /// 在 Dock 图标底部叠加实时下载速度。
 @MainActor
 final class DockSpeedController {
-    private let dockTile = NSApp.dockTile
-    private let iconView = DockSpeedIconView()
+    // 延迟到方法被调用时（App 启动后）再访问 AppKit：
+    // App 结构体初始化阶段 NSApp 尚未建立，提前访问会导致启动崩溃。
+    private var dockTile: NSDockTile { NSApplication.shared.dockTile }
+    private lazy var iconView = DockSpeedIconView()
     private var isEnabled = false
 
     func setEnabled(_ enabled: Bool) {

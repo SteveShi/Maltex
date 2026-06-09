@@ -2,6 +2,43 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.7] - 2026-06-09
+
+### Fixed
+- Fixed a critical crash that made the app crash immediately on launch (the Dock download-speed indicator accessed AppKit before the application finished initializing).
+- Fixed an untranslated fallback label ("Unknown task") in the task detail view.
+
+### Changed
+- Updated the bundled experimental aria2-next engine to 2.4.6. Since aria2-next 2.4.0 realigned to the standard aria2 (v2.1.4) baseline, engine arguments now use the standard option set; options that no longer exist in 2.4.x (and could prevent the engine from starting) were removed.
+
+### Added
+- Copy magnet / ED2K link from the task list context menu and the detail view (uses aria2-next 2.4.4 link fields, with a magnet fallback derived from the info hash).
+- Share-only seeding control (`--detach-share-only`, aria2-next only).
+- Decimal units for speed limits, e.g. `1.5M` (decimal units require aria2-next).
+
+### Removed
+- Removed obsolete aria2-next-specific settings (proxy mode, dedicated log levels/rotation, torrent-metadata mode) and the non-functional UPnP toggle.
+
+---
+
+### Chinese
+### 修复
+- 修复启动即崩溃的严重问题（Dock 下载速度指示器在应用初始化完成前访问了 AppKit）。
+- 修复任务详情中未本地化的兜底文案（“未知任务”）。
+
+### 变更
+- 内置实验内核 aria2-next 更新至 2.4.6。由于 aria2-next 自 2.4.0 起回退到标准 aria2(v2.1.4) 基线，引擎参数改用标准选项集；移除了 2.4.x 已不存在、会导致内核无法启动的选项。
+
+### 新增
+- 在任务列表右键菜单与详情页复制磁力 / ED2K 链接（使用 aria2-next 2.4.4 的链接字段，BT 任务可由 info hash 兜底生成磁力链接）。
+- 仅做种分享控制（`--detach-share-only`，仅 aria2-next 生效）。
+- 限速支持小数单位，如 `1.5M`（小数单位需 aria2-next）。
+
+### 移除
+- 移除已失效的 aria2-next 专属设置（代理模式、独立日志级别/轮转、种子元数据模式）与不再生效的 UPnP 开关。
+
+---
+
 ## [1.1.6] - 2026-06-09
 
 ### Added

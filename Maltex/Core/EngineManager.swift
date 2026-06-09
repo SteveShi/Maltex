@@ -203,6 +203,8 @@ class EngineManager: ObservableObject {
     }
 
     private func buildArguments(settings: SettingsStore) -> [String] {
+        // aria2-next 2.4.x 已回退到标准 aria2(v2.1.4) 基线，参数与标准内核一致。
+        // 仅 --detach-share-only 为其独有，单独按需追加。
         let isAria2Next = settings.aria2BinarySource == .bundledAria2Next
         var args = [
             "--enable-rpc",
@@ -228,8 +230,9 @@ class EngineManager: ObservableObject {
             "--disable-ipv6=true",
             "--content-disposition-default-utf8=\(settings.contentDispositionDefaultUTF8 ? "true" : "false")",
             "--save-session-interval=\(settings.saveSessionInterval)",
+            "--log=\(logPath.path)",
+            "--log-level=notice",
         ]
-        appendLogArguments(to: &args, settings: settings, isAria2Next: isAria2Next)
 
         if !settings.userAgent.isEmpty {
             args.append("--user-agent=\(settings.userAgent)")
@@ -262,38 +265,31 @@ class EngineManager: ObservableObject {
         args.append("--bt-enable-lpd=true")
         args.append("--enable-peer-exchange=true")
         args.append("--bt-max-peers=\(settings.btMaxPeers)")
-        if !isAria2Next {
-            args.append("--bt-request-peer-speed-limit=\(settings.btRequestPeerSpeedLimit)K")
-        }
+        args.append("--bt-request-peer-speed-limit=\(settings.btRequestPeerSpeedLimit)K")
         args.append("--seed-ratio=\(settings.seedRatio)")
         if settings.seedTime > 0 {
             args.append("--seed-time=\(settings.seedTime)")
         }
 
-        if !settings.upnpEnabled && !isAria2Next {
-            args.append("--disable-upnp=true")
-        }
-        if isAria2Next {
-            args.append("--torrent-metadata=\(settings.aria2NextTorrentMetadataMode.rawValue)")
-        } else if settings.btSaveMetadata {
+        if settings.btSaveMetadata {
             args.append("--bt-save-metadata=true")
         }
         if settings.btForceEncryption {
-            if isAria2Next {
-                args.append("--bt-force-encryption=true")
-            } else {
-                args.append("--bt-require-crypto=true")
-                args.append("--bt-min-crypto-level=arc4")
-            }
+            args.append("--bt-require-crypto=true")
+            args.append("--bt-min-crypto-level=arc4")
+        }
+        // aria2-next 2.4.2+ 独有：统计并发时排除仅做种任务
+        if isAria2Next && settings.detachShareOnly {
+            args.append("--detach-share-only=true")
         }
         if !settings.rpcSecret.isEmpty {
             args.append("--rpc-secret=\(settings.rpcSecret)")
         }
-        if settings.maxOverallDownloadLimit > 0 {
-            args.append("--max-overall-download-limit=\(settings.maxOverallDownloadLimit)K")
+        if let downloadLimit = normalizedSpeedLimit(settings.maxOverallDownloadLimit) {
+            args.append("--max-overall-download-limit=\(downloadLimit)")
         }
-        if settings.maxOverallUploadLimit > 0 {
-            args.append("--max-overall-upload-limit=\(settings.maxOverallUploadLimit)K")
+        if let uploadLimit = normalizedSpeedLimit(settings.maxOverallUploadLimit) {
+            args.append("--max-overall-upload-limit=\(uploadLimit)")
         }
         if settings.proxyEnabled && !settings.proxyHost.isEmpty {
             let proxyURL = "\(settings.proxyHost):\(settings.proxyPort)"
@@ -302,9 +298,6 @@ class EngineManager: ObservableObject {
                 args.append("--all-proxy-user=\(settings.proxyUser)")
                 args.append("--all-proxy-passwd=\(settings.proxyPass)")
             }
-        }
-        if isAria2Next {
-            args.append("--proxy-mode=\(settings.aria2NextProxyMode.rawValue)")
         }
 
         let extraArguments = settings.extraAria2Arguments
@@ -315,21 +308,15 @@ class EngineManager: ObservableObject {
         return args
     }
 
-    private func appendLogArguments(
-        to args: inout [String],
-        settings: SettingsStore,
-        isAria2Next: Bool
-    ) {
-        if isAria2Next {
-            args.append("--log-file=\(logPath.path)")
-            args.append("--terminal-log-level=\(settings.aria2NextTerminalLogLevel.rawValue)")
-            args.append("--file-log-level=\(settings.aria2NextFileLogLevel.rawValue)")
-            args.append("--log-max-size=\(max(1, settings.aria2NextLogMaxSizeMB))M")
-            args.append("--log-max-files=\(max(1, settings.aria2NextLogMaxFiles))")
-        } else {
-            args.append("--log=\(logPath.path)")
-            args.append("--log-level=notice")
+    /// 归一化限速输入：空或 "0" 视为不限（返回 nil）。
+    /// 纯数字按 KB/s 处理（追加 K）；带单位或小数（如 1.5M）原样传递，小数单位需 aria2-next。
+    private func normalizedSpeedLimit(_ raw: String) -> String? {
+        let value = raw.trimmingCharacters(in: .whitespaces)
+        guard !value.isEmpty, value != "0" else { return nil }
+        if value.range(of: "^[0-9]+$", options: .regularExpression) != nil {
+            return "\(value)K"
         }
+        return value
     }
 
     private func resolveBinaryURL(settings: SettingsStore) -> URL? {

@@ -20,50 +20,6 @@ class SettingsStore: ObservableObject {
         }
     }
 
-    enum Aria2NextProxyMode: String, CaseIterable, Identifiable {
-        case auto
-        case direct
-        case manual
-
-        var id: String { rawValue }
-
-        var localizedName: LocalizedStringKey {
-            switch self {
-            case .auto: "自动"
-            case .direct: "直连"
-            case .manual: "手动"
-            }
-        }
-    }
-
-    enum Aria2NextLogLevel: String, CaseIterable, Identifiable {
-        case trace
-        case debug
-        case info
-        case warn
-        case error
-        case critical
-        case off
-
-        var id: String { rawValue }
-    }
-
-    enum Aria2NextTorrentMetadataMode: String, CaseIterable, Identifiable {
-        case save
-        case start
-        case memory
-
-        var id: String { rawValue }
-
-        var localizedName: LocalizedStringKey {
-            switch self {
-            case .save: "仅保存"
-            case .start: "保存并开始"
-            case .memory: "仅内存启动"
-            }
-        }
-    }
-
     // General
     @AppStorage("maxConcurrentDownloads") var maxConcurrentDownloads: Int = 5
     @AppStorage("maxConnectionPerServer") var maxConnectionPerServer: Int = 16
@@ -88,8 +44,9 @@ class SettingsStore: ObservableObject {
         Aria2BinarySource.bundled.rawValue
     @AppStorage("aria2StartOnLaunch") var aria2StartOnLaunch: Bool = true
     @AppStorage("customAria2Path") var customAria2Path: String = ""
-    @AppStorage("maxOverallDownloadLimit") var maxOverallDownloadLimit: Int = 0  // 0 = unlimited
-    @AppStorage("maxOverallUploadLimit") var maxOverallUploadLimit: Int = 0
+    // 限速：空或 "0" 表示不限；支持 K/M 单位，小数（如 1.5M）需 aria2-next
+    @AppStorage("maxOverallDownloadLimit") var maxOverallDownloadLimit: String = "0"
+    @AppStorage("maxOverallUploadLimit") var maxOverallUploadLimit: String = "0"
     @AppStorage("minSplitSize") var minSplitSize: Int = 20
     @AppStorage("maxTries") var maxTries: Int = 5
     @AppStorage("retryWait") var retryWait: Int = 5
@@ -108,18 +65,6 @@ class SettingsStore: ObservableObject {
     @AppStorage("referer") var referer: String = ""
     @AppStorage("extraAria2Arguments") var extraAria2Arguments: String = ""
 
-    // Aria2 Next experimental settings
-    @AppStorage("aria2NextProxyMode") private var aria2NextProxyModeRaw: String =
-        Aria2NextProxyMode.manual.rawValue
-    @AppStorage("aria2NextTerminalLogLevel") private var aria2NextTerminalLogLevelRaw: String =
-        Aria2NextLogLevel.warn.rawValue
-    @AppStorage("aria2NextFileLogLevel") private var aria2NextFileLogLevelRaw: String =
-        Aria2NextLogLevel.info.rawValue
-    @AppStorage("aria2NextLogMaxSizeMB") var aria2NextLogMaxSizeMB: Int = 10
-    @AppStorage("aria2NextLogMaxFiles") var aria2NextLogMaxFiles: Int = 5
-    @AppStorage("aria2NextTorrentMetadataMode") private var aria2NextTorrentMetadataModeRaw: String =
-        Aria2NextTorrentMetadataMode.start.rawValue
-
     // Proxy
     @AppStorage("proxyEnabled") var proxyEnabled: Bool = false
     @AppStorage("proxyHost") var proxyHost: String = ""
@@ -131,8 +76,8 @@ class SettingsStore: ObservableObject {
     @AppStorage("trackerServers") var trackerServers: String = SettingsStore.defaultTrackers
     @AppStorage("btPort") var btPort: Int = 6881
     @AppStorage("dhtPort") var dhtPort: Int = 6882
-    @AppStorage("upnpEnabled") var upnpEnabled: Bool = true
     @AppStorage("btSaveMetadata") var btSaveMetadata: Bool = false
+    @AppStorage("detachShareOnly") var detachShareOnly: Bool = false
     @AppStorage("btAutoStart") var btAutoStart: Bool = true
     @AppStorage("btForceEncryption") var btForceEncryption: Bool = false
     @AppStorage("btMaxPeers") var btMaxPeers: Int = 55
@@ -143,26 +88,6 @@ class SettingsStore: ObservableObject {
     var aria2BinarySource: Aria2BinarySource {
         get { Aria2BinarySource(rawValue: aria2BinarySourceRaw) ?? .bundled }
         set { aria2BinarySourceRaw = newValue.rawValue }
-    }
-
-    var aria2NextProxyMode: Aria2NextProxyMode {
-        get { Aria2NextProxyMode(rawValue: aria2NextProxyModeRaw) ?? .manual }
-        set { aria2NextProxyModeRaw = newValue.rawValue }
-    }
-
-    var aria2NextTerminalLogLevel: Aria2NextLogLevel {
-        get { Aria2NextLogLevel(rawValue: aria2NextTerminalLogLevelRaw) ?? .warn }
-        set { aria2NextTerminalLogLevelRaw = newValue.rawValue }
-    }
-
-    var aria2NextFileLogLevel: Aria2NextLogLevel {
-        get { Aria2NextLogLevel(rawValue: aria2NextFileLogLevelRaw) ?? .info }
-        set { aria2NextFileLogLevelRaw = newValue.rawValue }
-    }
-
-    var aria2NextTorrentMetadataMode: Aria2NextTorrentMetadataMode {
-        get { Aria2NextTorrentMetadataMode(rawValue: aria2NextTorrentMetadataModeRaw) ?? .start }
-        set { aria2NextTorrentMetadataModeRaw = newValue.rawValue }
     }
 
     // Tracker Source Management

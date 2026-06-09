@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct TaskListView: View {
@@ -64,6 +65,16 @@ struct TaskListView: View {
                                     taskStore.stopTasks(gids: [task.gid])
                                 } label: {
                                     Label(String(localized: "停止"), systemImage: "stop.fill")
+                                }
+
+                                if let link = task.shareLink {
+                                    Button {
+                                        let pasteboard = NSPasteboard.general
+                                        pasteboard.clearContents()
+                                        pasteboard.setString(link, forType: .string)
+                                    } label: {
+                                        Label(String(localized: "复制链接"), systemImage: "link")
+                                    }
                                 }
 
                                 Divider()

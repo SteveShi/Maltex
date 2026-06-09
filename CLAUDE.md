@@ -94,17 +94,14 @@ Update both in all three targets (Maltex, Maltex Extension, MaltexTests).
 The app supports multiple aria2 sources (see `SettingsStore.Aria2BinarySource`):
 
 1. **bundled**: Standard aria2c (in `extra/darwin/{arch}/engine/aria2c`)
-2. **bundledAria2Next**: Experimental aria2-next with enhanced features (in `extra/darwin/{arch}/engine/aria2-next`)
+2. **bundledAria2Next**: Experimental aria2-next (in `extra/darwin/{arch}/engine/aria2-next`), source: [AnInsomniacy/aria2-next](https://github.com/AnInsomniacy/aria2-next)
 3. **commandLine**: System-installed aria2c (Homebrew paths)
 4. **custom**: User-specified path
 
-**Aria2-Next Differences:**
-- Uses `--torrent-metadata` instead of `--bt-save-metadata`
-- Uses `--bt-force-encryption` instead of `--bt-require-crypto`
-- Adds `--proxy-mode`, `--terminal-log-level`, `--file-log-level`, `--log-max-size`, `--log-max-files`
-- Does NOT support `--bt-request-peer-speed-limit`, `--disable-upnp`
+**Aria2-Next (2.4.x):**
+Since v2.4.0 the engine was realigned to the standard aria2 (v2.1.4) baseline, so `EngineManager.buildArguments()` uses the **same standard option set** for aria2-next as for bundled aria2c. The earlier 2.2.x/2.3.x-only options (`--torrent-metadata`, `--proxy-mode`, `--terminal-log-level`, `--file-log-level`, `--log-max-size`, `--log-max-files`) were removed and must NOT be passed — they cause "unrecognized option" startup failure.
 
-When aria2-next is selected, `EngineManager.buildArguments()` uses `isAria2Next` flag to conditionally include/exclude parameters.
+The only aria2-next-specific argument still applied is `--detach-share-only` (2.4.2+, gated by the `isAria2Next` flag). aria2-next extras surfaced in the app: native `thunder://` decoding, decimal speed-limit units (e.g. `1.5M`), ED2K upload accounting, and `bittorrent.magnetLink` / `ed2k.ed2kLink` task-status fields (used by the "复制链接" action).
 
 ### Data Flow
 

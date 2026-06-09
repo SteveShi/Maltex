@@ -15,14 +15,8 @@ final class SettingsStoreTests: XCTestCase {
         XCTAssertEqual(settings.rpcHost, "127.0.0.1")
         XCTAssertEqual(settings.aria2BinarySource, .bundled)
         XCTAssertTrue(settings.aria2StartOnLaunch)
-        XCTAssertEqual(settings.aria2NextProxyMode, .manual)
-        XCTAssertEqual(settings.aria2NextTerminalLogLevel, .warn)
-        XCTAssertEqual(settings.aria2NextFileLogLevel, .info)
-        XCTAssertEqual(settings.aria2NextLogMaxSizeMB, 10)
-        XCTAssertEqual(settings.aria2NextLogMaxFiles, 5)
-        XCTAssertEqual(settings.aria2NextTorrentMetadataMode, .start)
-        XCTAssertEqual(settings.maxOverallDownloadLimit, 0)
-        XCTAssertEqual(settings.maxOverallUploadLimit, 0)
+        XCTAssertEqual(settings.maxOverallDownloadLimit, "0")
+        XCTAssertEqual(settings.maxOverallUploadLimit, "0")
         XCTAssertFalse(settings.proxyEnabled)
         XCTAssertTrue(settings.notificationEnabled)
     }
@@ -41,10 +35,10 @@ final class SettingsStoreTests: XCTestCase {
 
         XCTAssertEqual(settings.btPort, 6881)
         XCTAssertEqual(settings.dhtPort, 6882)
-        XCTAssertTrue(settings.upnpEnabled)
         XCTAssertFalse(settings.btSaveMetadata)
         XCTAssertTrue(settings.btAutoStart)
         XCTAssertFalse(settings.btForceEncryption)
+        XCTAssertFalse(settings.detachShareOnly)
     }
 
     func testAria2AdvancedDefaults() {

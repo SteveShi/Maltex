@@ -13,6 +13,17 @@ struct TaskDetailView: View {
                 Text("任务详情")
                     .font(.headline)
                 Spacer()
+                if let link = task.shareLink {
+                    Button {
+                        let pasteboard = NSPasteboard.general
+                        pasteboard.clearContents()
+                        pasteboard.setString(link, forType: .string)
+                    } label: {
+                        Label(String(localized: "复制链接"), systemImage: "link")
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                }
                 Button(action: onDismiss) {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundColor(.secondary)
@@ -40,7 +51,7 @@ struct TaskDetailView: View {
                             Text(
                                 task.bittorrent?.info?.name ?? task.files.first?.path.components(
                                     separatedBy: "/"
-                                ).last ?? "未知任务"
+                                ).last ?? String(localized: "未知任务")
                             )
                             .font(.title3)
                             .bold()
