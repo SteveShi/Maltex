@@ -72,7 +72,7 @@ struct TaskDetailView: View {
                             .padding(.horizontal)
 
                         Grid(alignment: .leading, horizontalSpacing: 20, verticalSpacing: 10) {
-                            DetailGridRow(label: "状态", value: task.status.localizedName)
+                            DetailGridRow(label: "状态", value: task.localizedDisplayStatusName)
                             DetailGridRow(
                                 label: "大小",
                                 value: ByteCountFormatterUtil.string(

@@ -11,6 +11,7 @@ struct DownloadTask: Identifiable, Codable, Hashable {
     var infoHash: String?
     var numSeeders: Int?
     var connections: Int
+    var seeder: Bool
     var errorCode: String?
     var followedBy: String?
     var belongsTo: String?
@@ -27,10 +28,29 @@ struct DownloadTask: Identifiable, Codable, Hashable {
 
     /// 预计剩余下载时间（秒）；仅在下载中且速度有效时可用。
     var remainingSeconds: Int64? {
-        guard status == .active, downloadSpeed > 0, totalLength > 0 else { return nil }
+        guard status == .active, !hasFinishedDownloading, downloadSpeed > 0, totalLength > 0 else { return nil }
         let remaining = totalLength - completedLength
         guard remaining > 0 else { return nil }
         return remaining / downloadSpeed
+    }
+
+    /// 文件内容是否已经下载完成。BT 任务在做种阶段仍可能保持 active。
+    var hasFinishedDownloading: Bool {
+        totalLength > 0 && completedLength >= totalLength
+    }
+
+    /// BT 下载完成后仍处于 active 的做种/上传阶段。
+    var isSeeding: Bool {
+        bittorrent != nil && status == .active && (seeder || hasFinishedDownloading)
+    }
+
+    /// 用户视角的下载完成：做种中的 BT 任务也已经完成下载。
+    var isDownloadComplete: Bool {
+        status == .complete || isSeeding
+    }
+
+    var localizedDisplayStatusName: String {
+        isSeeding ? String(localized: "正在上传") : status.localizedName
     }
 
     /// 可分享链接：优先用 aria2-next 2.4.4+ 提供的字段，BT 任务可由 infoHash 兜底构造磁力链接。
@@ -71,6 +91,7 @@ struct DownloadTask: Identifiable, Codable, Hashable {
         lhs.downloadSpeed == rhs.downloadSpeed &&
         lhs.uploadSpeed == rhs.uploadSpeed &&
         lhs.numSeeders == rhs.numSeeders &&
+        lhs.seeder == rhs.seeder &&
         lhs.files.count == rhs.files.count &&
         lhs.bittorrent?.info?.name == rhs.bittorrent?.info?.name
     }
@@ -82,7 +103,7 @@ struct DownloadTask: Identifiable, Codable, Hashable {
     enum CodingKeys: String, CodingKey {
         case gid, status, totalLength, completedLength, uploadLength
         case downloadSpeed, uploadSpeed, infoHash, numSeeders, connections
-        case errorCode, followedBy, belongsTo, dir, files, bittorrent, ed2k
+        case seeder, errorCode, followedBy, belongsTo, dir, files, bittorrent, ed2k
     }
 
     init(from decoder: Decoder) throws {
@@ -111,6 +132,7 @@ struct DownloadTask: Identifiable, Codable, Hashable {
         downloadSpeed = decodeInt64(.downloadSpeed)
         uploadSpeed = decodeInt64(.uploadSpeed)
         connections = decodeInt(.connections)
+        seeder = Self.decodeBool(from: container, forKey: .seeder)
 
         infoHash = try container.decodeIfPresent(String.self, forKey: .infoHash)
         if let seedersStr = try? container.decode(String.self, forKey: .numSeeders) {
@@ -125,6 +147,19 @@ struct DownloadTask: Identifiable, Codable, Hashable {
         files = try container.decode([DownloadFile].self, forKey: .files)
         bittorrent = try container.decodeIfPresent(BittorrentInfo.self, forKey: .bittorrent)
         ed2k = try container.decodeIfPresent(Ed2kInfo.self, forKey: .ed2k)
+    }
+
+    private static func decodeBool(
+        from container: KeyedDecodingContainer<CodingKeys>,
+        forKey key: CodingKeys
+    ) -> Bool {
+        if let value = try? container.decode(Bool.self, forKey: key) {
+            return value
+        }
+        if let string = try? container.decode(String.self, forKey: key) {
+            return string.lowercased() == "true"
+        }
+        return false
     }
 
     enum TaskStatus: String, Codable {

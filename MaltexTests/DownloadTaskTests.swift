@@ -112,6 +112,72 @@ final class DownloadTaskTests: XCTestCase {
         XCTAssertEqual(task.infoHash, "aabbccdd")
     }
 
+    func testDecodeSeedingTaskAsDownloadComplete() throws {
+        let json = """
+        {
+            "gid": "seed001",
+            "status": "active",
+            "totalLength": "5242880",
+            "completedLength": "5242880",
+            "uploadLength": "1048576",
+            "downloadSpeed": "0",
+            "uploadSpeed": "65536",
+            "connections": "3",
+            "seeder": "true",
+            "dir": "/tmp",
+            "files": [{
+                "index": "1",
+                "path": "/tmp/movie.mkv",
+                "length": "5242880",
+                "completedLength": "5242880",
+                "selected": "true",
+                "uris": []
+            }],
+            "bittorrent": {
+                "info": {
+                    "name": "Test Movie"
+                }
+            }
+        }
+        """.data(using: .utf8)!
+
+        let task = try JSONDecoder().decode(DownloadTask.self, from: json)
+
+        XCTAssertTrue(task.seeder)
+        XCTAssertTrue(task.isSeeding)
+        XCTAssertTrue(task.isDownloadComplete)
+        XCTAssertNil(task.remainingSeconds)
+        XCTAssertEqual(task.localizedDisplayStatusName, String(localized: "正在上传"))
+    }
+
+    func testCompletedBittorrentActiveTaskIsSeedingEvenWithoutSeederField() throws {
+        let json = """
+        {
+            "gid": "seed002",
+            "status": "active",
+            "totalLength": "1024",
+            "completedLength": "1024",
+            "uploadLength": "0",
+            "downloadSpeed": "0",
+            "uploadSpeed": "0",
+            "connections": "1",
+            "dir": "/tmp",
+            "files": [],
+            "bittorrent": {
+                "info": {
+                    "name": "Finished Payload"
+                }
+            }
+        }
+        """.data(using: .utf8)!
+
+        let task = try JSONDecoder().decode(DownloadTask.self, from: json)
+
+        XCTAssertFalse(task.seeder)
+        XCTAssertTrue(task.isSeeding)
+        XCTAssertTrue(task.isDownloadComplete)
+    }
+
     func testDecodeAllStatuses() throws {
         let statuses = ["active", "waiting", "paused", "error", "complete", "removed"]
         let expected: [DownloadTask.TaskStatus] = [.active, .waiting, .paused, .error, .complete, .removed]

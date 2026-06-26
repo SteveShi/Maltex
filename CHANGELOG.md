@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.9] - 2026-06-26
+
+### Fixed
+- Always show the torrent confirmation sheet before starting a `.torrent` download, regardless of the Magnet auto-start setting.
+- Detect BitTorrent seeding after the file payload finishes, show those tasks as uploading, and keep them out of the active downloading list.
+- Send completion notifications and restore completed history for BitTorrent tasks that remain active while seeding.
+
+### Changed
+- Renamed the BitTorrent auto-start setting so it only refers to Magnet links; `.torrent` files now require confirmation before starting.
+
+---
+
+### Chinese
+### 修复
+- 打开 `.torrent` 文件时总是先显示种子确认界面，不再受磁力链接自动开始设置影响。
+- 下载内容完成后识别 BitTorrent 做种阶段，将这类任务显示为正在上传，并从正在下载列表中移出。
+- 对仍在做种的 BitTorrent 任务发送下载完成通知，并恢复其已完成历史记录。
+
+### 变更
+- 调整 BitTorrent 自动开始设置文案，使其只指向磁力链接；`.torrent` 文件现在会先确认再开始。
+
+---
+
 ## [1.1.8] - 2026-06-09
 
 ### Added

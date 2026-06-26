@@ -57,7 +57,7 @@ struct MainView: View {
                 }
             }
         }
-        .onChange(of: taskStore.tasks.map(\.gid)) {
+        .onChange(of: taskStore.tasks) {
             if let gid = pendingRevealGid {
                 revealAddedTaskIfReady(gid: gid)
             }
@@ -109,6 +109,9 @@ struct MainView: View {
                     }
                     NavigationLink(value: "downloading") {
                         Label("正在下载", systemImage: "arrow.down.circle")
+                    }
+                    NavigationLink(value: "uploading") {
+                        Label("正在上传", systemImage: "arrow.up.circle")
                     }
                     NavigationLink(value: "waiting") {
                         Label("等待下载", systemImage: "clock")

@@ -702,7 +702,7 @@ struct BTSettingsView: View {
                 SettingsSection("进阶设置") {
                     VStack(alignment: .leading, spacing: 12) {
                         Toggle("保存磁力链接元数据为种子文件 (.torrent)", isOn: $settings.btSaveMetadata)
-                        Toggle("自动开始下载磁力链接和种子内容", isOn: $settings.btAutoStart)
+                        Toggle("自动开始下载磁力链接", isOn: $settings.btAutoStart)
                         Toggle("强制 BT 加密 (BT Require Crypto)", isOn: $settings.btForceEncryption)
                         Toggle("启动时自动同步 Tracker", isOn: $settings.autoSyncTracker)
                         VStack(alignment: .leading, spacing: 2) {

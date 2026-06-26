@@ -3,6 +3,91 @@ import XCTest
 
 /// 测试 SettingsStore 默认值
 final class SettingsStoreTests: XCTestCase {
+    private let defaultsKeys = [
+        "maxConcurrentDownloads",
+        "maxConnectionPerServer",
+        "downloadPath",
+        "launchAtLogin",
+        "autoResumeTasks",
+        "notificationEnabled",
+        "showSpeedInDock",
+        "rpcHost",
+        "rpcPort",
+        "rpcSecret",
+        "rpcSSL",
+        "rpcListenAll",
+        "rpcAllowOriginAll",
+        "aria2BinarySource",
+        "aria2StartOnLaunch",
+        "customAria2Path",
+        "maxOverallDownloadLimit",
+        "maxOverallUploadLimit",
+        "minSplitSize",
+        "maxTries",
+        "retryWait",
+        "timeout",
+        "connectTimeout",
+        "diskCache",
+        "saveSessionInterval",
+        "maxDownloadResult",
+        "fileAllocation",
+        "continueDownloads",
+        "autoFileRenaming",
+        "allowOverwrite",
+        "checkCertificate",
+        "contentDispositionDefaultUTF8",
+        "userAgent",
+        "referer",
+        "extraAria2Arguments",
+        "proxyEnabled",
+        "proxyHost",
+        "proxyPort",
+        "proxyUser",
+        "proxyPass",
+        "trackerServers",
+        "btPort",
+        "dhtPort",
+        "btSaveMetadata",
+        "detachShareOnly",
+        "btAutoStart",
+        "btForceEncryption",
+        "btMaxPeers",
+        "btRequestPeerSpeedLimit",
+        "seedRatio",
+        "seedTime",
+        "selectedTrackerSourceURLs",
+        "customTrackerSourceURLs",
+        "autoSyncTracker",
+        "lastTrackerSyncTime",
+    ]
+    private var savedDefaults: [String: Any] = [:]
+
+    override func setUp() {
+        super.setUp()
+        savedDefaults = defaultsKeys.reduce(into: [:]) { result, key in
+            result[key] = UserDefaults.standard.object(forKey: key)
+        }
+        resetDefaults()
+    }
+
+    override func tearDown() {
+        restoreDefaults()
+        savedDefaults = [:]
+        super.tearDown()
+    }
+
+    private func resetDefaults() {
+        for key in defaultsKeys {
+            UserDefaults.standard.removeObject(forKey: key)
+        }
+    }
+
+    private func restoreDefaults() {
+        resetDefaults()
+        for (key, value) in savedDefaults {
+            UserDefaults.standard.set(value, forKey: key)
+        }
+    }
 
     func testDefaultValues() {
         let settings = SettingsStore()

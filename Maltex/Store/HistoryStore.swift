@@ -16,21 +16,25 @@ class HistoryStore: ObservableObject {
     }
 
     func add(_ task: DownloadTask) {
-        // Avoid duplicates
-        if !archivedTasks.contains(where: { $0.gid == task.gid }) {
-            var taskToArchive = task
-            // Ensure status is recorded as something final if not already
-            if taskToArchive.status == .active || taskToArchive.status == .waiting
-                || taskToArchive.status == .paused
-            {
-                // If we are archiving an active task (e.g. user removed it), mark it as removed
-                taskToArchive.status = .removed
-            }
-            // If it's complete, keep it as complete
-
-            archivedTasks.insert(taskToArchive, at: 0)
-            save()
+        var taskToArchive = task
+        // Ensure status is recorded as something final if not already.
+        // BT tasks can be active while seeding after the file payload is complete.
+        if taskToArchive.status == .active || taskToArchive.status == .waiting
+            || taskToArchive.status == .paused
+        {
+            taskToArchive.status = taskToArchive.isDownloadComplete ? .complete : .removed
         }
+
+        if let index = archivedTasks.firstIndex(where: { $0.gid == task.gid }) {
+            archivedTasks[index] = taskToArchive
+        } else {
+            archivedTasks.insert(taskToArchive, at: 0)
+        }
+        save()
+    }
+
+    func contains(gid: String) -> Bool {
+        archivedTasks.contains { $0.gid == gid }
     }
 
     func remove(gid: String) {

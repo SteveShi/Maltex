@@ -421,8 +421,11 @@ class TaskStore: ObservableObject {
                 datesChanged = true
             }
 
+            let wasDownloadComplete = oldTasksMap[gid]?.isDownloadComplete == true
+            let isDownloadComplete = currentEngineTasks[index].isDownloadComplete
+
             // 完成时记录完成时间（含已经处于完成态但尚无记录的情况）
-            if currentEngineTasks[index].status == .complete && completedDates[gid] == nil {
+            if isDownloadComplete && completedDates[gid] == nil {
                 completedDates[gid] = now
                 datesChanged = true
             }
@@ -430,14 +433,14 @@ class TaskStore: ObservableObject {
             currentEngineTasks[index].addedDate = addedDates[gid]
             currentEngineTasks[index].completedDate = completedDates[gid]
 
-            // Status transition: -> complete
-            if let oldTask = oldTasksMap[gid], oldTask.status != .complete,
-                currentEngineTasks[index].status == .complete
-            {
+            // Download transition: not complete -> file payload complete.
+            if oldTasksMap[gid] != nil, !wasDownloadComplete, isDownloadComplete {
                 if settings.notificationEnabled {
                     sendCompletionNotification(for: currentEngineTasks[index])
                 }
-                // Archive completed task
+            }
+
+            if isDownloadComplete && !historyStore.contains(gid: gid) {
                 historyStore.add(currentEngineTasks[index])
             }
         }
@@ -547,13 +550,12 @@ class TaskStore: ObservableObject {
     }
 
     func addTorrent(at path: String, dir: String? = nil) {
-        let settings = SettingsStore()
-        addTorrent(at: path, paused: !settings.btAutoStart, dir: dir)
+        addTorrent(at: path, paused: true, dir: dir)
     }
 
     func addTorrent(at path: String, paused: Bool, dir: String? = nil) {
         // 异步读取种子文件，避免阻塞主线程
-        Task { @MainActor in
+        Task { @MainActor [self] in
             let data: Data? = await Task.detached { () -> Data? in
                 try? Data(contentsOf: URL(fileURLWithPath: path))
             }.value
@@ -588,8 +590,8 @@ class TaskStore: ObservableObject {
                 method: .addTorrent,
                 params: params,
                 failureFormat: "添加下载失败: %@"
-            ) { [weak self] gid in
-                self?.lastAddedGid = gid
+            ) { gid in
+                self.lastAddedGid = gid
             }
         }
     }

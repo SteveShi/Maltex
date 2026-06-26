@@ -1004,6 +1004,17 @@
         }
       }
     },
+    "正在上传" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uploading"
+          }
+        }
+      }
+    },
     "正在连接引擎..." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1169,13 +1180,13 @@
         }
       }
     },
-    "自动开始下载磁力链接和种子内容" : {
+    "自动开始下载磁力链接" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Auto start downloading Magnet and Torrent"
+            "value" : "Auto start downloading Magnet links"
           }
         }
       }

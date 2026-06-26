@@ -26,7 +26,9 @@ struct TaskListView: View {
         case "all":
             return taskStore.tasks
         case "downloading":
-            return taskStore.tasks.filter { $0.status == .active }
+            return taskStore.tasks.filter { $0.status == .active && !$0.isSeeding }
+        case "uploading":
+            return taskStore.tasks.filter { $0.isSeeding }
         case "waiting":
             return taskStore.tasks.filter { $0.status == .waiting }
         case "paused":
@@ -40,7 +42,7 @@ struct TaskListView: View {
             // Let's define: Paused = Paused. Stopped = Error.
             return taskStore.tasks.filter { $0.status == .error }
         case "completed":
-            return taskStore.tasks.filter { $0.status == .complete }
+            return taskStore.tasks.filter { $0.isDownloadComplete }
                 .sorted { ($0.completedDate ?? .distantPast) > ($1.completedDate ?? .distantPast) }
         default:
             return taskStore.tasks
@@ -201,7 +203,7 @@ struct TaskRow: View {
 
     var body: some View {
         HStack {
-            Image(systemName: task.bittorrent != nil ? "arrow.down.doc.fill" : "link.circle.fill")
+            Image(systemName: iconName)
                 .font(.title2)
                 .foregroundColor(statusColor)
 
@@ -224,7 +226,10 @@ struct TaskRow: View {
                         )
                         .foregroundColor(.secondary)
                     }
-                    Text(formatBytes(task.downloadSpeed) + "/s")
+                    Label(
+                        formatBytes(task.isSeeding ? task.uploadSpeed : task.downloadSpeed) + "/s",
+                        systemImage: task.isSeeding ? "arrow.up" : "arrow.down"
+                    )
                         .foregroundColor(.secondary)
                 }
                 .font(.caption)
@@ -263,6 +268,10 @@ struct TaskRow: View {
     }
 
     private var statusColor: Color {
+        if task.isSeeding {
+            return .green
+        }
+
         switch task.status {
         case .active: return .accentColor
         case .waiting: return .orange
@@ -275,5 +284,12 @@ struct TaskRow: View {
 
     private func formatBytes(_ bytes: Int64) -> String {
         ByteCountFormatterUtil.string(fromByteCount: bytes)
+    }
+
+    private var iconName: String {
+        if task.isSeeding {
+            return "arrow.up.circle.fill"
+        }
+        return task.bittorrent != nil ? "arrow.down.doc.fill" : "link.circle.fill"
     }
 }
