@@ -63,9 +63,8 @@ struct MaltexApp: App {
                     await taskStore.startEngineOnLaunchIfNeeded(settings: settingsStore)
                     await autoSyncTrackersOnLaunch()
                 }
-                .onReceive(taskStore.$tasks) { tasks in
-                    let total = tasks.reduce(Int64(0)) { $0 + $1.downloadSpeed }
-                    dockSpeedController.update(downloadSpeed: total)
+                .onReceive(taskStore.$tasks) { _ in
+                    dockSpeedController.update(downloadSpeed: taskStore.totalDownloadSpeed)
                 }
                 .onChange(of: settingsStore.showSpeedInDock) { _, enabled in
                     dockSpeedController.setEnabled(enabled)

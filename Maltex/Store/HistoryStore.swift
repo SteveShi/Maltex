@@ -25,6 +25,10 @@ class HistoryStore: ObservableObject {
             taskToArchive.status = taskToArchive.isDownloadComplete ? .complete : .removed
         }
 
+        // 历史已归档任务的实时速度必须清零，防止把归档时的瞬时速度残留在持久化数据中
+        taskToArchive.downloadSpeed = 0
+        taskToArchive.uploadSpeed = 0
+
         if let index = archivedTasks.firstIndex(where: { $0.gid == task.gid }) {
             archivedTasks[index] = taskToArchive
         } else {

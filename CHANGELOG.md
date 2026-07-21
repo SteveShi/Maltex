@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.10] - 2026-07-21
+
+### Fixed
+- Corrected Dock icon download speed calculation to only sum speeds of active downloading tasks, excluding completed, seeding, and archived tasks.
+- Fixed an issue where archived historical tasks retained leftover download speed and connection metrics after app restoration.
+
+---
+
+### Chinese
+### 修复
+- 修正 Dock 图标实时下载速度统计逻辑，仅计算真正处于下载状态的活跃任务，排除已完成、做种与归档任务。
+- 修复已完成的历史任务在归档及离线恢复后残留瞬时网速与后台连接数的问题。
+
+---
+
 ## [1.1.9] - 2026-06-26
 
 ### Fixed

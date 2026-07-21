@@ -30,9 +30,10 @@ class TaskStore: ObservableObject {
     @Published var shouldPresentEngineError = false
     @Published var lastAddedGid: String?
 
-    /// 当前所有任务的实时下载速度之和（字节/秒），用于 Dock 图标等聚合展示。
+    /// 当前所有正在下载任务的实时下载速度之和（字节/秒），用于 Dock 图标等聚合展示。
     var totalDownloadSpeed: Int64 {
-        tasks.reduce(Int64(0)) { $0 + $1.downloadSpeed }
+        tasks.filter { $0.status == .active && !$0.isSeeding }
+            .reduce(Int64(0)) { $0 + $1.downloadSpeed }
     }
 
     // History
@@ -453,6 +454,8 @@ class TaskStore: ObservableObject {
                 var task = task
                 task.addedDate = addedDates[task.gid]
                 task.completedDate = completedDates[task.gid]
+                task.downloadSpeed = 0
+                task.uploadSpeed = 0
                 return task
             }
 
