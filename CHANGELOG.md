@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.11] - 2026-07-23
+
+### Changed
+- Removed unused `Alamofire` dependency and streamlined internal codebase.
+- Optimized Foundation byte count formatters, date formatters, and protocol parsing to rely on native Swift standard library APIs.
+- Cleaned up repository structure and internal documentation.
+
+---
+
+### Chinese
+### 变更
+- 移除未使用的 `Alamofire` 第三方依赖包，精简内部代码架构。
+- 优化 Foundation 格式化工具与 URL 协议解析，全面采用 Swift 标准库原生 API。
+- 清理项目工程架构与冗余内部文件。
+
+---
+
 ## [1.1.10] - 2026-07-21
 
 ### Fixed

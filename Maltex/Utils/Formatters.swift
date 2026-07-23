@@ -2,10 +2,7 @@ import Foundation
 
 struct ByteCountFormatterUtil {
     static func string(fromByteCount count: Int64) -> String {
-        let formatter = ByteCountFormatter()
-        formatter.allowedUnits = [.useBytes, .useKB, .useMB, .useGB]
-        formatter.countStyle = .file
-        return formatter.string(fromByteCount: count)
+        ByteCountFormatter.string(fromByteCount: count, countStyle: .file)
     }
 }
 
@@ -26,14 +23,7 @@ struct DurationFormatterUtil {
 
 /// 本地化的日期时间字符串（用于任务添加时间等展示）。
 struct DateTimeFormatterUtil {
-    private static let formatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
-        return formatter
-    }()
-
     static func string(from date: Date) -> String {
-        formatter.string(from: date)
+        date.formatted(date: .abbreviated, time: .shortened)
     }
 }

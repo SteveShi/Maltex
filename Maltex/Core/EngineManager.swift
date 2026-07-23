@@ -450,12 +450,10 @@ extension String {
         let line = self + "\n"
         guard let data = line.data(using: .utf8) else { return }
 
-        if FileManager.default.fileExists(atPath: fileURL.path) {
-            if let fileHandle = try? FileHandle(forWritingTo: fileURL) {
-                fileHandle.seekToEndOfFile()
-                fileHandle.write(data)
-                fileHandle.closeFile()
-            }
+        if let handle = try? FileHandle(forWritingTo: fileURL) {
+            defer { try? handle.close() }
+            try handle.seekToEnd()
+            try handle.write(contentsOf: data)
         } else {
             try data.write(to: fileURL, options: .atomic)
         }

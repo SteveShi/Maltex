@@ -157,10 +157,7 @@ struct TrackerEntry: Identifiable {
 
     /// Extracts protocol scheme from a tracker URL (e.g. "udp", "http", "https").
     static func parseProtocol(from url: String) -> String {
-        guard let match = url.range(of: #"^(\w+)://"#, options: .regularExpression) else {
-            return "unknown"
-        }
-        return String(url[match]).replacingOccurrences(of: "://", with: "")
+        URL(string: url)?.scheme ?? "unknown"
     }
 
     /// Builds tracker entries from a newline-separated tracker string.

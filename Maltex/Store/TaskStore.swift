@@ -1,4 +1,3 @@
-import Alamofire
 import AnyCodable
 @preconcurrency import Aria2Kit
 import Combine

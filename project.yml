@@ -11,9 +11,6 @@ packages:
   AnyCodable:
     url: https://github.com/Flight-School/AnyCodable
     version: 0.6.7
-  Alamofire:
-    url: https://github.com/Alamofire/Alamofire
-    version: 5.11.2
   Sparkle:
     url: https://github.com/sparkle-project/Sparkle
     from: 2.0.0
@@ -42,8 +39,8 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: app.maltex.native
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         SWIFT_VERSION: 6.0
-        MARKETING_VERSION: 1.1.10
-        CURRENT_PROJECT_VERSION: 1200
+        MARKETING_VERSION: 1.1.11
+        CURRENT_PROJECT_VERSION: 1201
         ENABLE_HARDENED_RUNTIME: YES
         CODE_SIGN_ENTITLEMENTS: Maltex/Maltex.entitlements
         CODE_SIGN_STYLE: Automatic
@@ -51,7 +48,6 @@ targets:
     dependencies:
       - package: Aria2Kit
       - package: AnyCodable
-      - package: Alamofire
       - package: Sparkle
         product: Sparkle
       - target: Maltex Extension
@@ -68,8 +64,8 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: app.maltex.native.extension
         GENERATE_INFOPLIST_FILE: NO
         SWIFT_VERSION: 6.0
-        MARKETING_VERSION: 1.1.10
-        CURRENT_PROJECT_VERSION: 1200
+        MARKETING_VERSION: 1.1.11
+        CURRENT_PROJECT_VERSION: 1201
         ENABLE_HARDENED_RUNTIME: YES
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: ""
