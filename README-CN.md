@@ -92,7 +92,10 @@ brew install --cask maltex
 
 ## 📜 开源协议
 
-Maltex 基于 [MIT 协议](./LICENSE) 开源。
+Maltex 本身基于 [MIT 协议](./LICENSE) 开源。
+
+内置打包的下载引擎 `aria2` 及 `aria2-next` 遵循 [GNU General Public License v2.0 (GPLv2)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html) 协议分发。详细的第三方组件许可及源码出引请参阅 [开源致谢声明 (ACKNOWLEDGEMENTS.md)](./ACKNOWLEDGEMENTS.md)。
 
 ---
 *源自 Motrix，为 macOS 而生。*
+

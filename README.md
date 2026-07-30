@@ -92,7 +92,10 @@ Contributions, bug reports, and feature requests are welcome! Please check the [
 
 ## 📜 License
 
-Maltex is released under the [MIT License](./LICENSE).
+Maltex itself is released under the [MIT License](./LICENSE).
+
+The bundled download engine `aria2` / `aria2-next` is distributed under the [GNU General Public License v2.0 (GPLv2)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html). For details on third-party licenses and source code references, please refer to [ACKNOWLEDGEMENTS.md](./ACKNOWLEDGEMENTS.md).
 
 ---
 *Inspired by Motrix. Reborn for macOS.*
+

@@ -216,6 +216,23 @@ struct GeneralSettingsView: View {
                         Toggle("在 Dock 图标显示实时下载速度", isOn: $settings.showSpeedInDock)
                     }
                 }
+
+                SettingsSection("关于与开源协议") {
+                    AlignedFormRow("Maltex 软件许可", description: "基于 MIT 协议开源") {
+                        Link("查看许可证", destination: URL(string: "https://github.com/SteveShi/Maltex/blob/main/LICENSE")!)
+                            .font(.system(size: 12))
+                    }
+                    AlignedFormRow("Aria2 下载引擎", description: "内置可执行引擎，基于 GPL v2.0 协议分发") {
+                        HStack(spacing: 8) {
+                            Link("Aria2 源码", destination: URL(string: "https://github.com/aria2/aria2")!)
+                                .font(.system(size: 12))
+                            Text("•")
+                                .foregroundColor(.secondary)
+                            Link("GPLv2 协议", destination: URL(string: "https://www.gnu.org/licenses/old-licenses/gpl-2.0.html")!)
+                                .font(.system(size: 12))
+                        }
+                    }
+                }
             }
             .padding()
         }

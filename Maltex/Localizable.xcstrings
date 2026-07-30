@@ -1,6 +1,94 @@
 {
   "sourceLanguage" : "zh-Hans",
   "strings" : {
+    "Aria2 源码" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aria2 Source Code"
+          }
+        }
+      }
+    },
+    "Aria2 下载引擎" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aria2 Download Engine"
+          }
+        }
+      }
+    },
+    "GPLv2 协议" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GPLv2 License"
+          }
+        }
+      }
+    },
+    "Maltex 软件许可" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maltex License"
+          }
+        }
+      }
+    },
+    "关于与开源协议" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About & Licenses"
+          }
+        }
+      }
+    },
+    "内置可执行引擎，基于 GPL v2.0 协议分发" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bundled executable engine, distributed under GPL v2.0"
+          }
+        }
+      }
+    },
+    "基于 MIT 协议开源" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open source under MIT License"
+          }
+        }
+      }
+    },
+    "查看许可证" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "View License"
+          }
+        }
+      }
+    },
     "/" : {
       "extractionState" : "manual",
       "localizations" : {

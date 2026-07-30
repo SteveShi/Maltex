@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.12] - 2026-07-30
+
+### Changed
+- Updated bundled experimental download engine `aria2-next` to v2.5.3 (ARM64 and x86_64).
+
+### Added
+- Open Source Acknowledgements & Licenses document (`ACKNOWLEDGEMENTS.md`) for third-party component compliance.
+- License & Acknowledgements section in General Settings with direct links to Maltex, Aria2, and GPLv2 license documentation.
+
+### Fixed
+- Clarified licensing details: Maltex is licensed under MIT, while bundled aria2/aria2-next engines operate under GPLv2 via process isolation.
+- Corrected aria2-next source repository URL reference in documentation (`AnInsomniacy/aria2-next`).
+
+---
+
+### Chinese
+### 变更
+- 更新内置实验性下载引擎 `aria2-next` 至 v2.5.3 (ARM64 & x86_64)。
+
+### 新增
+- 增加开源致谢与许可声明文档 (`ACKNOWLEDGEMENTS.md`)，完善第三方组件合规说明。
+- 在常规设置中增加“关于与开源协议”区域，提供 Maltex、Aria2 源码及 GPLv2 协议直链。
+
+### 修复
+- 明确许可证边界：Maltex 保持 MIT 协议开源，内置 aria2/aria2-next 引擎基于进程间隔离按 GPLv2 协议分发。
+- 修正文档中实验内核 aria2-next 的官方仓库链接 (`AnInsomniacy/aria2-next`)。
+
+---
+
 ## [1.1.11] - 2026-07-23
 
 ### Changed
