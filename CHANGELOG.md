@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.13] - 2026-08-03
+
+### Added
+- System notifications (`UNUserNotificationCenter`) for download failure events.
+- Detailed error reason display (`errorMessage` and localized error descriptions) in the task list (`TaskRow`) and task details view (`TaskDetailView`).
+
+### Fixed
+- Fixed an issue where the detail tray remained open when a task moved to another category upon download completion or error.
+
+---
+
+### Chinese
+### 新增
+- 增加下载任务失败时的系统本地通知提示 (`UNUserNotificationCenter`)。
+- 在任务列表项 (`TaskRow`) 与任务详情视图 (`TaskDetailView`) 中补充详细的错误原因解析与展示。
+
+### 修复
+- 修复下载完成或出错后任务迁移分类时，详情托盘未自动收起的问题。
+
+---
+
 ## [1.1.12] - 2026-07-30
 
 ### Changed

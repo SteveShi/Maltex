@@ -230,6 +230,49 @@ final class DownloadTaskTests: XCTestCase {
         XCTAssertEqual(task.belongsTo, "gid_parent")
     }
 
+    func testTaskErrorMessageAndLocalizedDescription() throws {
+        let jsonWithMsg = """
+        {
+            "gid": "err001",
+            "status": "error",
+            "totalLength": "0",
+            "completedLength": "0",
+            "uploadLength": "0",
+            "downloadSpeed": "0",
+            "uploadSpeed": "0",
+            "connections": "0",
+            "errorCode": "3",
+            "errorMessage": "Resource not found",
+            "dir": "/tmp",
+            "files": []
+        }
+        """.data(using: .utf8)!
+
+        let taskWithMsg = try JSONDecoder().decode(DownloadTask.self, from: jsonWithMsg)
+        XCTAssertEqual(taskWithMsg.errorMessage, "Resource not found")
+        XCTAssertEqual(taskWithMsg.localizedErrorDescription, "Resource not found")
+
+        let jsonWithCodeOnly = """
+        {
+            "gid": "err002",
+            "status": "error",
+            "totalLength": "0",
+            "completedLength": "0",
+            "uploadLength": "0",
+            "downloadSpeed": "0",
+            "uploadSpeed": "0",
+            "connections": "0",
+            "errorCode": "9",
+            "dir": "/tmp",
+            "files": []
+        }
+        """.data(using: .utf8)!
+
+        let taskWithCodeOnly = try JSONDecoder().decode(DownloadTask.self, from: jsonWithCodeOnly)
+        XCTAssertNil(taskWithCodeOnly.errorMessage)
+        XCTAssertEqual(taskWithCodeOnly.localizedErrorDescription, "错误代码: 9")
+    }
+
     // MARK: - Identifiable / Hashable 测试
 
     func testIdentifiable() throws {

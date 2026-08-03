@@ -346,6 +346,50 @@
         }
       }
     },
+    "下载失败" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download Failed"
+          }
+        }
+      }
+    },
+    "下载出错" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download Error"
+          }
+        }
+      }
+    },
+    "错误代码: %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Error Code: %@"
+          }
+        }
+      }
+    },
+    "错误原因" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Error Reason"
+          }
+        }
+      }
+    },
     "下载完成后通知" : {
       "extractionState" : "manual",
       "localizations" : {

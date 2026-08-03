@@ -195,6 +195,14 @@ struct TaskListView: View {
         } message: {
             Text("将删除 \(pendingDeleteGids.count) 个任务。“删除任务和文件”会一并删除已下载到磁盘的文件，且不可恢复。")
         }
+        .onChange(of: Set(filteredTasks.map(\.gid))) { _, visibleGids in
+            let orphaned = selectedTaskGids.subtracting(visibleGids)
+            if !orphaned.isEmpty {
+                withAnimation(.spring()) {
+                    selectedTaskGids.subtract(orphaned)
+                }
+            }
+        }
     }
 }
 
@@ -219,18 +227,23 @@ struct TaskRow: View {
                 HStack {
                     Text(formatBytes(task.completedLength) + " / " + formatBytes(task.totalLength))
                     Spacer()
-                    if let remaining = task.remainingSeconds {
+                    if task.status == .error, let errorDesc = task.localizedErrorDescription {
+                        Label(errorDesc, systemImage: "exclamationmark.triangle.fill")
+                            .foregroundColor(.red)
+                    } else {
+                        if let remaining = task.remainingSeconds {
+                            Label(
+                                DurationFormatterUtil.string(fromSeconds: remaining),
+                                systemImage: "clock"
+                            )
+                            .foregroundColor(.secondary)
+                        }
                         Label(
-                            DurationFormatterUtil.string(fromSeconds: remaining),
-                            systemImage: "clock"
+                            formatBytes(task.isSeeding ? task.uploadSpeed : task.downloadSpeed) + "/s",
+                            systemImage: task.isSeeding ? "arrow.up" : "arrow.down"
                         )
-                        .foregroundColor(.secondary)
+                            .foregroundColor(.secondary)
                     }
-                    Label(
-                        formatBytes(task.isSeeding ? task.uploadSpeed : task.downloadSpeed) + "/s",
-                        systemImage: task.isSeeding ? "arrow.up" : "arrow.down"
-                    )
-                        .foregroundColor(.secondary)
                 }
                 .font(.caption)
             }

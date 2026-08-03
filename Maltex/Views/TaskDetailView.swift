@@ -73,6 +73,9 @@ struct TaskDetailView: View {
 
                         Grid(alignment: .leading, horizontalSpacing: 20, verticalSpacing: 10) {
                             DetailGridRow(label: "状态", value: task.localizedDisplayStatusName)
+                            if let errorDesc = task.localizedErrorDescription {
+                                DetailGridRow(label: "错误原因", value: errorDesc)
+                            }
                             DetailGridRow(
                                 label: "大小",
                                 value: ByteCountFormatterUtil.string(

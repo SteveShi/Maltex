@@ -440,6 +440,15 @@ class TaskStore: ObservableObject {
                 }
             }
 
+            // Error transition: non-error -> error
+            let wasError = oldTasksMap[gid]?.status == .error
+            let isError = currentEngineTasks[index].status == .error
+            if oldTasksMap[gid] != nil, !wasError, isError {
+                if settings.notificationEnabled {
+                    sendErrorNotification(for: currentEngineTasks[index])
+                }
+            }
+
             if isDownloadComplete && !historyStore.contains(gid: gid) {
                 historyStore.add(currentEngineTasks[index])
             }
@@ -488,6 +497,29 @@ class TaskStore: ObservableObject {
         UNUserNotificationCenter.current().add(request) { error in
             if let error {
                 print("[TaskStore] Failed to deliver notification: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    private func sendErrorNotification(for task: DownloadTask) {
+        ensureNotificationPermission()
+
+        let content = UNMutableNotificationContent()
+        content.title = String(localized: "下载失败")
+        content.subtitle =
+            task.bittorrent?.info?.name ?? task.files.first?.path.components(separatedBy: "/").last
+            ?? String(localized: "未知文件")
+        content.body = task.localizedErrorDescription ?? String(localized: "下载出错")
+        content.sound = .default
+
+        let request = UNNotificationRequest(
+            identifier: "error-\(task.gid)",
+            content: content,
+            trigger: nil
+        )
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error {
+                print("[TaskStore] Failed to deliver error notification: \(error.localizedDescription)")
             }
         }
     }

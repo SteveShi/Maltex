@@ -13,6 +13,7 @@ struct DownloadTask: Identifiable, Codable, Hashable {
     var connections: Int
     var seeder: Bool
     var errorCode: String?
+    var errorMessage: String?
     var followedBy: String?
     var belongsTo: String?
     var dir: String
@@ -25,6 +26,16 @@ struct DownloadTask: Identifiable, Codable, Hashable {
     var completedDate: Date?
 
     var id: String { gid }
+
+    /// 下载出错时的本地化错误描述。
+    var localizedErrorDescription: String? {
+        guard status == .error else { return nil }
+        if let msg = errorMessage, !msg.isEmpty { return msg }
+        if let code = errorCode, !code.isEmpty {
+            return String(format: String(localized: "错误代码: %@"), code)
+        }
+        return String(localized: "下载出错")
+    }
 
     /// 预计剩余下载时间（秒）；仅在下载中且速度有效时可用。
     var remainingSeconds: Int64? {
@@ -103,7 +114,7 @@ struct DownloadTask: Identifiable, Codable, Hashable {
     enum CodingKeys: String, CodingKey {
         case gid, status, totalLength, completedLength, uploadLength
         case downloadSpeed, uploadSpeed, infoHash, numSeeders, connections
-        case seeder, errorCode, followedBy, belongsTo, dir, files, bittorrent, ed2k
+        case seeder, errorCode, errorMessage, followedBy, belongsTo, dir, files, bittorrent, ed2k
     }
 
     init(from decoder: Decoder) throws {
@@ -141,6 +152,7 @@ struct DownloadTask: Identifiable, Codable, Hashable {
             numSeeders = try? container.decode(Int.self, forKey: .numSeeders)
         }
         errorCode = try container.decodeIfPresent(String.self, forKey: .errorCode)
+        errorMessage = try container.decodeIfPresent(String.self, forKey: .errorMessage)
         followedBy = try container.decodeIfPresent(String.self, forKey: .followedBy)
         belongsTo = try container.decodeIfPresent(String.self, forKey: .belongsTo)
         dir = try container.decode(String.self, forKey: .dir)
