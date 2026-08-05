@@ -631,8 +631,15 @@ class TaskStore: ObservableObject {
     }
 
     func pauseTasks(gids: Set<String>) {
+        // 乐观 UI 更新：立即将任务状态置为 paused，带来毫秒级即时响应体感
+        for i in 0..<tasks.count {
+            if gids.contains(tasks[i].gid) {
+                tasks[i].status = .paused
+                tasks[i].downloadSpeed = 0
+            }
+        }
         for gid in gids {
-            aria2.call(method: .pause, params: [AnyEncodable(gid)]).response { [weak self] _ in
+            aria2.call(method: .forcePause, params: [AnyEncodable(gid)]).response { [weak self] _ in
                 Task { @MainActor in self?.fetchTasks() }
             }
         }

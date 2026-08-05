@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.17] - 2026-08-06
+
+### Improved
+- Dynamic button state validation in task list toolbar and context menu: "Start" and "Pause" buttons are now dynamically enabled or disabled based on selected task statuses (e.g., "Start" is disabled when tasks are downloading).
+- Optimized BT download pause speed with instant optimistic UI response and `forcePause` RPC invocation.
+
+---
+
+### Chinese
+### 改进
+- 优化任务列表工具栏与右键菜单的按钮可用状态判定：根据当前选中任务的实际状态（下载中、已暂停、已完成）动态开启或禁用“开始”和“暂停”按钮（例如：任务下载中时自动禁用“开始”按钮）。
+- 优化 BT 任务暂停响应速度：使用 `forcePause` 并结合本地乐观 UI 状态更新，实现点击暂停的毫秒级即时响应。
+
+---
+
 ## [1.1.16] - 2026-08-06
 
 ### Improved

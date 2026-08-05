@@ -21,6 +21,22 @@ struct TaskListView: View {
         showDeleteConfirm = true
     }
 
+    private var selectedTasks: [DownloadTask] {
+        taskStore.tasks.filter { selectedTaskGids.contains($0.gid) }
+    }
+
+    private var canResumeSelected: Bool {
+        selectedTasks.contains { $0.status == .paused || $0.status == .error || $0.status == .waiting }
+    }
+
+    private var canPauseSelected: Bool {
+        selectedTasks.contains { $0.status == .active || $0.status == .waiting }
+    }
+
+    private var canStopSelected: Bool {
+        selectedTasks.contains { !$0.isDownloadComplete && $0.status != .error }
+    }
+
     var filteredTasks: [DownloadTask] {
         switch status {
         case "all":
@@ -76,12 +92,14 @@ struct TaskListView: View {
                                         systemImage: task.status == .active
                                             ? "pause.fill" : "play.fill")
                                 }
+                                .disabled(task.isDownloadComplete)
 
                                 Button {
                                     taskStore.stopTasks(gids: [task.gid])
                                 } label: {
                                     Label(String(localized: "停止"), systemImage: "stop.fill")
                                 }
+                                .disabled(task.isDownloadComplete)
 
                                 let downloadURLs = task.downloadURLs
                                 if !downloadURLs.isEmpty {
@@ -138,19 +156,19 @@ struct TaskListView: View {
                 Button(action: { taskStore.resumeTasks(gids: selectedTaskGids) }) {
                     Label(String(localized: "开始"), systemImage: "play.fill")
                 }
-                .disabled(selectedTaskGids.isEmpty)
+                .disabled(!canResumeSelected)
                 .help(String(localized: "开始任务"))
 
                 Button(action: { taskStore.pauseTasks(gids: selectedTaskGids) }) {
                     Label(String(localized: "暂停"), systemImage: "pause.fill")
                 }
-                .disabled(selectedTaskGids.isEmpty)
+                .disabled(!canPauseSelected)
                 .help(String(localized: "暂停任务"))
 
                 Button(action: { taskStore.stopTasks(gids: selectedTaskGids) }) {
                     Label(String(localized: "停止"), systemImage: "stop.fill")
                 }
-                .disabled(selectedTaskGids.isEmpty)
+                .disabled(!canStopSelected)
                 .help(String(localized: "停止任务"))
 
                 Button(action: {
