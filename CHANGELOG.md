@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.14] - 2026-08-06
+
+### Fixed
+- Fixed an issue where the real-time speed display on the Dock icon stopped updating after closing the main window.
+
+---
+
+### Chinese
+### 修复
+- 修复主界面关闭后，Dock 图标上的实时下载速度显示无法刷新的问题。
+
+---
+
 ## [1.1.13] - 2026-08-03
 
 ### Added

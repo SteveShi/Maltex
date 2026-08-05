@@ -29,11 +29,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 @main
 struct MaltexApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    @StateObject private var taskStore = TaskStore()
-    @StateObject private var settingsStore = SettingsStore()
+    @StateObject private var taskStore: TaskStore
+    @StateObject private var settingsStore: SettingsStore
     @StateObject private var updater = Updater()
     @State private var didRunLaunchTasks = false
-    @State private var dockSpeedController = DockSpeedController()
+    private let dockSpeedController = DockSpeedController()
+
+    init() {
+        let taskStore = TaskStore()
+        let settingsStore = SettingsStore()
+        _taskStore = StateObject(wrappedValue: taskStore)
+        _settingsStore = StateObject(wrappedValue: settingsStore)
+
+        dockSpeedController.setup(taskStore: taskStore, settingsStore: settingsStore)
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -59,18 +68,8 @@ struct MaltexApp: App {
                 .task {
                     guard !didRunLaunchTasks else { return }
                     didRunLaunchTasks = true
-                    dockSpeedController.setEnabled(settingsStore.showSpeedInDock)
                     await taskStore.startEngineOnLaunchIfNeeded(settings: settingsStore)
                     await autoSyncTrackersOnLaunch()
-                }
-                .onReceive(taskStore.$tasks) { _ in
-                    dockSpeedController.update(downloadSpeed: taskStore.totalDownloadSpeed)
-                }
-                .onChange(of: settingsStore.showSpeedInDock) { _, enabled in
-                    dockSpeedController.setEnabled(enabled)
-                    if enabled {
-                        dockSpeedController.update(downloadSpeed: taskStore.totalDownloadSpeed)
-                    }
                 }
         }
         .windowToolbarStyle(.unified)

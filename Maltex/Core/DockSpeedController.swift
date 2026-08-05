@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 
 /// 在 Dock 图标底部叠加实时下载速度。
 @MainActor
@@ -8,6 +9,39 @@ final class DockSpeedController {
     private var dockTile: NSDockTile { NSApplication.shared.dockTile }
     private lazy var iconView = DockSpeedIconView()
     private var isEnabled = false
+    private var cancellables = Set<AnyCancellable>()
+
+    func setup(taskStore: TaskStore, settingsStore: SettingsStore) {
+        cancellables.removeAll()
+
+        settingsStore.objectWillChange
+            .receive(on: RunLoop.main)
+            .sink { [weak self, weak settingsStore, weak taskStore] _ in
+                guard let self = self, let settingsStore = settingsStore, let taskStore = taskStore else { return }
+                DispatchQueue.main.async {
+                    let enabled = settingsStore.showSpeedInDock
+                    self.setEnabled(enabled)
+                    if enabled {
+                        self.update(downloadSpeed: taskStore.totalDownloadSpeed)
+                    }
+                }
+            }
+            .store(in: &cancellables)
+
+        taskStore.$tasks
+            .receive(on: RunLoop.main)
+            .sink { [weak self, weak taskStore] _ in
+                guard let self = self, let taskStore = taskStore else { return }
+                self.update(downloadSpeed: taskStore.totalDownloadSpeed)
+            }
+            .store(in: &cancellables)
+
+        let enabled = settingsStore.showSpeedInDock
+        setEnabled(enabled)
+        if enabled {
+            update(downloadSpeed: taskStore.totalDownloadSpeed)
+        }
+    }
 
     func setEnabled(_ enabled: Bool) {
         guard isEnabled != enabled else { return }
