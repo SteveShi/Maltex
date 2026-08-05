@@ -213,7 +213,15 @@ struct GeneralSettingsView: View {
                             ))
                         Toggle("启动时自动开始未完成任务", isOn: $settings.autoResumeTasks)
                         Toggle("下载完成后通知", isOn: $settings.notificationEnabled)
-                        Toggle("在 Dock 图标显示实时下载速度", isOn: $settings.showSpeedInDock)
+                        AlignedFormRow("实时速度显示") {
+                            Picker("", selection: $settings.speedDisplayMode) {
+                                ForEach(SettingsStore.SpeedDisplayMode.allCases) { mode in
+                                    Text(mode.localizedName).tag(mode)
+                                }
+                            }
+                            .labelsHidden()
+                            .frame(width: 160)
+                        }
                     }
                 }
 

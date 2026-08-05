@@ -1048,6 +1048,50 @@
         }
       }
     },
+    "实时速度显示" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Real-time Speed Display"
+          }
+        }
+      }
+    },
+    "同时显示" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Display Both"
+          }
+        }
+      }
+    },
+    "只显示菜单栏图标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menu Bar Icon Only"
+          }
+        }
+      }
+    },
+    "只显示 Dock 图标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dock Icon Only"
+          }
+        }
+      }
+    },
     "显示主窗口" : {
       "extractionState" : "manual",
       "localizations" : {

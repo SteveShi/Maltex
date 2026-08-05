@@ -20,6 +20,22 @@ class SettingsStore: ObservableObject {
         }
     }
 
+    enum SpeedDisplayMode: String, CaseIterable, Identifiable, Codable {
+        case both
+        case menuBarOnly
+        case dockOnly
+
+        var id: String { rawValue }
+
+        var localizedName: LocalizedStringKey {
+            switch self {
+            case .both: "同时显示"
+            case .menuBarOnly: "只显示菜单栏图标"
+            case .dockOnly: "只显示 Dock 图标"
+            }
+        }
+    }
+
     // General
     @AppStorage("maxConcurrentDownloads") var maxConcurrentDownloads: Int = 5
     @AppStorage("maxConnectionPerServer") var maxConnectionPerServer: Int = 16
@@ -30,6 +46,18 @@ class SettingsStore: ObservableObject {
     @AppStorage("autoResumeTasks") var autoResumeTasks: Bool = true
     @AppStorage("notificationEnabled") var notificationEnabled: Bool = true
     @AppStorage("showSpeedInDock") var showSpeedInDock: Bool = true
+    @AppStorage("speedDisplayMode") private var speedDisplayModeRaw: String = SpeedDisplayMode.both.rawValue
+
+    var speedDisplayMode: SpeedDisplayMode {
+        get { SpeedDisplayMode(rawValue: speedDisplayModeRaw) ?? .both }
+        set {
+            speedDisplayModeRaw = newValue.rawValue
+            let showInDock = (newValue == .both || newValue == .dockOnly)
+            if showSpeedInDock != showInDock {
+                showSpeedInDock = showInDock
+            }
+        }
+    }
 
     // RPC
     @AppStorage("rpcHost") var rpcHost: String = "127.0.0.1"

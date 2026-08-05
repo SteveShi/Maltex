@@ -3,14 +3,19 @@ import SwiftUI
 
 struct MaltexMenuBar: Scene {
     @ObservedObject var taskStore: TaskStore
+    @ObservedObject var settingsStore: SettingsStore
+
+    private var showMenuBarSpeed: Bool {
+        settingsStore.speedDisplayMode == .both || settingsStore.speedDisplayMode == .menuBarOnly
+    }
 
     var body: some Scene {
         MenuBarExtra {
-            MenuBarView(taskStore: taskStore)
+            MenuBarView(taskStore: taskStore, settingsStore: settingsStore)
         } label: {
             HStack(spacing: 4) {
                 Image(systemName: "arrow.down.circle")
-                if taskStore.totalDownloadSpeed > 0 {
+                if showMenuBarSpeed && taskStore.totalDownloadSpeed > 0 {
                     Text("\(ByteCountFormatterUtil.string(fromByteCount: taskStore.totalDownloadSpeed))/s")
                         .font(.system(size: 11, weight: .medium, design: .monospaced))
                 }
@@ -22,10 +27,15 @@ struct MaltexMenuBar: Scene {
 
 private struct MenuBarView: View {
     @ObservedObject var taskStore: TaskStore
+    @ObservedObject var settingsStore: SettingsStore
     @Environment(\.openWindow) private var openWindow
 
     private var activeTasks: [DownloadTask] {
         taskStore.tasks.filter { !$0.isDownloadComplete }
+    }
+
+    private var showMenuBarSpeed: Bool {
+        settingsStore.speedDisplayMode == .both || settingsStore.speedDisplayMode == .menuBarOnly
     }
 
     var body: some View {
@@ -42,7 +52,7 @@ private struct MenuBarView: View {
 
                 Spacer()
 
-                if taskStore.totalDownloadSpeed > 0 {
+                if showMenuBarSpeed && taskStore.totalDownloadSpeed > 0 {
                     HStack(spacing: 4) {
                         Circle()
                             .fill(Color.green)
@@ -80,6 +90,9 @@ private struct MenuBarView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 24)
             } else {
+                let displayCount = min(activeTasks.count, 8)
+                let listHeight = min(CGFloat(displayCount) * 76 + 20, 300)
+
                 ScrollView {
                     VStack(spacing: 8) {
                         ForEach(activeTasks.prefix(8)) { task in
@@ -88,7 +101,7 @@ private struct MenuBarView: View {
                     }
                     .padding(10)
                 }
-                .frame(maxHeight: 300)
+                .frame(height: listHeight)
             }
 
             Divider()

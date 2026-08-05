@@ -89,7 +89,7 @@ struct MaltexApp: App {
                 .environmentObject(taskStore)
         }
 
-        MaltexMenuBar(taskStore: taskStore)
+        MaltexMenuBar(taskStore: taskStore, settingsStore: settingsStore)
     }
 
     private func autoSyncTrackersOnLaunch() async {

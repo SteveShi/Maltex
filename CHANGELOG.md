@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.18] - 2026-08-06
+
+### Added
+- Added Speed Display Mode Picker setting in General Settings ("Display Both", "Menu Bar Icon Only", "Dock Icon Only").
+
+### Fixed
+- Fixed menu bar popover ScrollView height collapsing issue when displaying active tasks.
+
+---
+
+### Chinese
+### 新增
+- 常规设置中增加“实时速度显示” Picker 选项（可切换“同时显示”、“只显示菜单栏图标”、“只显示 Dock 图标”）。
+
+### 修复
+- 修复菜单栏弹窗中活跃任务列表的高度坍塌隐没问题。
+
+---
+
 ## [1.1.17] - 2026-08-06
 
 ### Improved
