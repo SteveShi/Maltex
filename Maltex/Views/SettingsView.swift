@@ -440,13 +440,14 @@ struct Aria2SettingsView: View {
                         }
                     }
                     .labelsHidden()
-                    .frame(width: 280)
+                    .frame(minWidth: 200, alignment: .leading)
                 }
 
                 AlignedFormRow("生效范围") {
                     Text(sourceSummary)
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
+                        .frame(minWidth: 200, alignment: .leading)
                 }
 
                 if settings.aria2BinarySource == .custom {
@@ -508,9 +509,9 @@ struct Aria2SettingsView: View {
     private var downloadSection: some View {
         Group {
             SettingsSection("任务并发") {
-                numericRow("最大并发任务数", value: $settings.maxConcurrentDownloads, unit: "个", width: 80)
-                numericRow("单服务器连接数", value: $settings.maxConnectionPerServer, unit: "个", width: 80)
-                numericRow("最小分片大小", value: $settings.minSplitSize, unit: "MB", width: 80)
+                numericRow("最大并发任务数", value: $settings.maxConcurrentDownloads, unit: "个")
+                numericRow("单服务器连接数", value: $settings.maxConnectionPerServer, unit: "个")
+                numericRow("最小分片大小", value: $settings.minSplitSize, unit: "MB")
             }
 
             SettingsSection("速度限制") {
@@ -522,10 +523,10 @@ struct Aria2SettingsView: View {
 
     private var httpSection: some View {
         SettingsSection("HTTP/FTP/SFTP") {
-            numericRow("最大重试次数", value: $settings.maxTries, unit: "次", width: 80)
-            numericRow("重试等待", value: $settings.retryWait, unit: "秒", width: 80)
-            numericRow("连接超时", value: $settings.connectTimeout, unit: "秒", width: 80)
-            numericRow("传输超时", value: $settings.timeout, unit: "秒", width: 80)
+            numericRow("最大重试次数", value: $settings.maxTries, unit: "次")
+            numericRow("重试等待", value: $settings.retryWait, unit: "秒")
+            numericRow("连接超时", value: $settings.connectTimeout, unit: "秒")
+            numericRow("传输超时", value: $settings.timeout, unit: "秒")
             toggleRow("校验证书", isOn: $settings.checkCertificate)
             AlignedFormRow("用户代理") {
                 TextField("默认", text: $settings.userAgent)
@@ -546,11 +547,11 @@ struct Aria2SettingsView: View {
                     Text("prealloc").tag("prealloc")
                     Text("trunc").tag("trunc")
                 }
-                .frame(width: 140)
+                .frame(width: 120)
             }
-            numericRow("磁盘缓存", value: $settings.diskCache, unit: "MB", width: 80)
-            numericRow("保存会话间隔", value: $settings.saveSessionInterval, unit: "秒", width: 80)
-            numericRow("最大下载结果", value: $settings.maxDownloadResult, unit: "项", width: 80)
+            numericRow("磁盘缓存", value: $settings.diskCache, unit: "MB")
+            numericRow("保存会话间隔", value: $settings.saveSessionInterval, unit: "秒")
+            numericRow("最大下载结果", value: $settings.maxDownloadResult, unit: "项")
             toggleRow("断点续传", isOn: $settings.continueDownloads)
             toggleRow("自动重命名", isOn: $settings.autoFileRenaming)
             toggleRow("允许覆盖文件", isOn: $settings.allowOverwrite)
@@ -583,18 +584,18 @@ struct Aria2SettingsView: View {
     private func numericRow(
         _ title: LocalizedStringKey,
         value: Binding<Int>,
-        unit: LocalizedStringKey,
-        width: CGFloat
+        unit: LocalizedStringKey
     ) -> some View {
         AlignedFormRow(title) {
-            HStack {
+            HStack(spacing: 6) {
                 TextField("", value: value, format: .number)
                     .textFieldStyle(.roundedBorder)
-                    .frame(width: width)
+                    .frame(width: 80)
                 Text(unit)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+            .frame(width: 120, alignment: .leading)
         }
     }
 
