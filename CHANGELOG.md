@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.1.15] - 2026-08-06
+## [1.1.16] - 2026-08-06
 
 ### Improved
 - Redesigned menu bar popover with modern card-based layout (`MenuBarExtraStyle.window`).
@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 - Fixed an issue where the real-time speed display on the Dock icon stopped updating after closing the main window.
+- Fixed misaligned form controls in Settings (Aria2 source, file/session, download, and HTTP sections).
 
 ---
 
@@ -26,6 +27,7 @@ All notable changes to this project will be documented in this file.
 
 ### 修复
 - 修复主界面关闭后，Dock 图标上的实时下载速度显示无法刷新的问题。
+- 修复设置页面中 Aria2 来源、文件与会话、下载任务、HTTP 等区域表单控件未对齐的问题。
 
 ---
 
