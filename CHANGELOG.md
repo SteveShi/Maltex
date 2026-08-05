@@ -2,7 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.1.14] - 2026-08-06
+## [1.1.15] - 2026-08-06
+
+### Improved
+- Redesigned menu bar popover with modern card-based layout (`MenuBarExtraStyle.window`).
+- Active download tasks now display file name, progress bar, real-time speed, downloaded/total size, and percentage in the menu bar popover.
+- Real-time total download speed is shown next to the menu bar icon when downloads are active.
+- Completed downloads are no longer shown in the menu bar download list.
+- Added `displayName` computed property to `DownloadTask` for friendly file name display throughout the app.
 
 ### Fixed
 - Fixed an issue where the real-time speed display on the Dock icon stopped updating after closing the main window.
@@ -10,6 +17,13 @@ All notable changes to this project will be documented in this file.
 ---
 
 ### Chinese
+### 改进
+- 重新设计菜单栏弹窗为现代卡片式布局（`MenuBarExtraStyle.window`）。
+- 活跃下载任务在菜单栏弹窗中显示文件名、进度条、实时速度、已下载/总大小及百分比。
+- 下载中时，菜单栏图标旁实时显示当前总下载速度。
+- 已完成的下载不再显示在菜单栏下载列表中。
+- 为 `DownloadTask` 增加 `displayName` 计算属性，提供友好文件名显示。
+
 ### 修复
 - 修复主界面关闭后，Dock 图标上的实时下载速度显示无法刷新的问题。
 

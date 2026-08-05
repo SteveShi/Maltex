@@ -64,6 +64,31 @@ struct DownloadTask: Identifiable, Codable, Hashable {
         isSeeding ? String(localized: "正在上传") : status.localizedName
     }
 
+    /// 任务友好展示名称（按 BT 名称 -> 简洁文件名 -> 解码后的 URL 文件名 优先顺序提取，自动去除 16/40/64 位 Hex ID 干扰）。
+    var displayName: String {
+        if let btName = bittorrent?.info?.name, !btName.isEmpty {
+            return btName
+        }
+        if let path = files.first?.path, !path.isEmpty {
+            let lastComponent = (path as NSString).lastPathComponent
+            let isHexId = lastComponent.range(
+                of: "^[0-9a-fA-F]{16}$|^[0-9a-fA-F]{40}$|^[0-9a-fA-F]{64}$",
+                options: .regularExpression
+            ) != nil
+            if !isHexId && !lastComponent.isEmpty {
+                return lastComponent
+            }
+        }
+        if let uri = files.first?.uris.first?.uri,
+           let decodedUri = uri.removingPercentEncoding,
+           let basePart = decodedUri.components(separatedBy: "?").first?.components(separatedBy: "#").first,
+           let lastComponent = basePart.components(separatedBy: "/").last,
+           !lastComponent.isEmpty {
+            return lastComponent
+        }
+        return String(localized: "未知任务")
+    }
+
     /// 可分享链接：优先用 aria2-next 2.4.4+ 提供的字段，BT 任务可由 infoHash 兜底构造磁力链接。
     var shareLink: String? {
         if let magnet = bittorrent?.magnetLink, !magnet.isEmpty { return magnet }
