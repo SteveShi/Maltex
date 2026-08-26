@@ -1,5 +1,7 @@
-import AnyCodable
+import struct AnyCodable.AnyCodable
 @preconcurrency import Aria2Kit
+
+private typealias AnyEncodable = Aria2Kit.AnyEncodable
 import Combine
 import Foundation
 import SwiftUI

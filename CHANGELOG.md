@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.19] - 2026-08-27
+
+### Changed
+- Updated bundled experimental download engine `aria2-next` to v2.6.4 (ARM64 and x86_64).
+- Upgraded `Aria2Kit` dependency to 1.0.7 (Alamofire 5.12.0) and resolved `AnyEncodable` namespace collision.
+
+---
+
+### Chinese
+### 变更
+- 更新内置实验性下载引擎 `aria2-next` 至 v2.6.4 (ARM64 & x86_64)。
+- 升级 `Aria2Kit` 依赖至 1.0.7 (Alamofire 5.12.0)，并解决 `AnyEncodable` 命名空间冲突。
+
+---
+
 ## [1.1.18] - 2026-08-06
 
 ### Added

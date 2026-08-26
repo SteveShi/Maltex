@@ -1,22 +1,13 @@
 {
-  "originHash" : "e3d0c5f92c0a2d70144a1fc1f365fba7134470f4c1c17cee8c7a1ea064c92987",
+  "originHash" : "4081be491c96fa88806e7c1f9e929d506dcea670aab936654f571dfbcc07366d",
   "pins" : [
     {
       "identity" : "alamofire",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Alamofire/Alamofire",
       "state" : {
-        "revision" : "e938f8c66708e7352fc7e3512647fa54255b267a",
-        "version" : "5.11.2"
-      }
-    },
-    {
-      "identity" : "anycodable",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/Flight-School/AnyCodable",
-      "state" : {
-        "revision" : "862808b2070cd908cb04f9aafe7de83d35f81b05",
-        "version" : "0.6.7"
+        "revision" : "7595cbcf59809f9977c5f6378500de2ad73b7ddb",
+        "version" : "5.12.0"
       }
     },
     {
@@ -24,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/baptistecdr/Aria2Kit",
       "state" : {
-        "revision" : "e3c84747f477a41e7028b6e66f8f2097d169344f",
-        "version" : "1.0.5"
+        "revision" : "f7665b7a8d27c41a6f54af64a5a43858e7a38e4c",
+        "version" : "1.0.7"
       }
     }
   ],
