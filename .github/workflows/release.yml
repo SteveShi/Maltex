@@ -107,25 +107,20 @@ jobs:
           # Ad-hoc sign the app with Hardened Runtime options to ensure system features work correctly
           codesign --force --deep --sign - --options=runtime --entitlements Maltex/Maltex.entitlements Build/Universal/Maltex.app
 
-      - name: Split Architectures (x86_64 & arm64)
+      - name: Split Architectures (arm64)
         run: |
-          mkdir -p Build/x86_64/Maltex.app
           mkdir -p Build/arm64/Maltex.app
           
-          # Copy Universal app to specific folders
-          cp -R Build/Universal/Maltex.app/ Build/x86_64/Maltex.app/
+          # Copy Universal app to arm64 folder
           cp -R Build/Universal/Maltex.app/ Build/arm64/Maltex.app/
           
           # Thin main executable
-          lipo -thin x86_64 Build/Universal/Maltex.app/Contents/MacOS/Maltex -output Build/x86_64/Maltex.app/Contents/MacOS/Maltex
           lipo -thin arm64 Build/Universal/Maltex.app/Contents/MacOS/Maltex -output Build/arm64/Maltex.app/Contents/MacOS/Maltex
           
           # Thin Safari Extension
-          lipo -thin x86_64 "Build/Universal/Maltex.app/Contents/PlugIns/Maltex Extension.appex/Contents/MacOS/Maltex Extension" -output "Build/x86_64/Maltex.app/Contents/PlugIns/Maltex Extension.appex/Contents/MacOS/Maltex Extension"
           lipo -thin arm64 "Build/Universal/Maltex.app/Contents/PlugIns/Maltex Extension.appex/Contents/MacOS/Maltex Extension" -output "Build/arm64/Maltex.app/Contents/PlugIns/Maltex Extension.appex/Contents/MacOS/Maltex Extension"
 
-          # Re-sign thinned apps deeply with runtime options
-          codesign --force --deep --sign - --options=runtime --entitlements Maltex/Maltex.entitlements Build/x86_64/Maltex.app
+          # Re-sign thinned app deeply with runtime options
           codesign --force --deep --sign - --options=runtime --entitlements Maltex/Maltex.entitlements Build/arm64/Maltex.app
 
       - name: Create DMGs and ZIPs
@@ -133,12 +128,12 @@ jobs:
         run: |
           VERSION=${{ env.VERSION }}
           
-          # Universal ZIP (for Sparkle)
+          # 1. Universal ZIP
           cd Build/Universal
-          zip -r "../../Maltex-${VERSION}-Universal.zip" "Maltex.app"
+          zip -qy -r "../../Maltex-${VERSION}-universal.zip" "Maltex.app"
           cd -
 
-          # Universal DMG
+          # 2. Universal DMG
           create-dmg \
             --volname "Maltex Installer" \
             --volicon "Maltex/Assets.xcassets/AppIcon.appiconset/icon.png" \
@@ -148,23 +143,15 @@ jobs:
             --icon "Maltex.app" 200 190 \
             --hide-extension "Maltex.app" \
             --app-drop-link 600 185 \
-            "Maltex-${VERSION}-Universal.dmg" \
+            "Maltex-${VERSION}-universal.dmg" \
             "Build/Universal/Maltex.app"
 
-          # x86_64 DMG
-          create-dmg \
-            --volname "Maltex Installer (Intel)" \
-            --volicon "Maltex/Assets.xcassets/AppIcon.appiconset/icon.png" \
-            --window-pos 200 120 \
-            --window-size 800 400 \
-            --icon-size 100 \
-            --icon "Maltex.app" 200 190 \
-            --hide-extension "Maltex.app" \
-            --app-drop-link 600 185 \
-            "Maltex-${VERSION}-x86_64.dmg" \
-            "Build/x86_64/Maltex.app"
+          # 3. arm64 ZIP
+          cd Build/arm64
+          zip -qy -r "../../Maltex-${VERSION}-arm64.zip" "Maltex.app"
+          cd -
 
-          # arm64 DMG
+          # 4. arm64 DMG
           create-dmg \
             --volname "Maltex Installer (Apple Silicon)" \
             --volicon "Maltex/Assets.xcassets/AppIcon.appiconset/icon.png" \
@@ -177,7 +164,7 @@ jobs:
             "Maltex-${VERSION}-arm64.dmg" \
             "Build/arm64/Maltex.app"
           
-          echo "ZIP_NAME=Maltex-${VERSION}-Universal.zip" >> $GITHUB_ENV
+          echo "ZIP_NAME=Maltex-${VERSION}-universal.zip" >> $GITHUB_ENV
 
       - name: Extract Release Notes (en & zh)
         run: |
@@ -212,7 +199,8 @@ jobs:
           fi
 
           mkdir -p deploy
-          cp "${{ env.ZIP_NAME }}" deploy/
+          cp "$GITHUB_WORKSPACE/Maltex-${VERSION}-universal.zip" deploy/
+          cp "$GITHUB_WORKSPACE/Maltex-${VERSION}-arm64.zip" deploy/
           cp release_notes_en.md "deploy/release_notes_en.md"
           cp release_notes_zh.md "deploy/release_notes_zh.md"
           cp release_notes_en.md "deploy/release_notes.md"
@@ -251,10 +239,10 @@ jobs:
           prerelease: false
           body_path: release_notes.md
           files: |
-            Maltex-*-Universal.dmg
-            Maltex-*-x86_64.dmg
+            Maltex-*-universal.zip
+            Maltex-*-universal.dmg
+            Maltex-*-arm64.zip
             Maltex-*-arm64.dmg
-            ${{ env.ZIP_NAME }}
             release_notes_en.md
             release_notes_zh.md
             appcast.xml
@@ -266,7 +254,7 @@ jobs:
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
         run: |
           VERSION="${{ env.VERSION }}"
-          DMG_NAME="Maltex-${VERSION}-Universal.dmg"
+          DMG_NAME="Maltex-${VERSION}-universal.dmg"
           SHA256=$(shasum -a 256 "$DMG_NAME" | awk '{print $1}')
           
           git clone https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/SteveShi/homebrew-tap.git tap-repo
