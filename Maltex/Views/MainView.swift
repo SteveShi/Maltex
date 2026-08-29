@@ -132,34 +132,70 @@ struct MainView: View {
 
             Divider()
 
-            HStack(spacing: 8) {
+            HStack(spacing: 6) {
                 Circle()
-                    .fill(sidebarConnectionColor)
-                    .frame(width: 8, height: 8)
-                Text("Aria2连接状态")
-                    .font(.caption)
-                Spacer()
-                Text(sidebarConnectionText)
+                    .fill(sidebarStatusColor)
+                    .frame(width: 7, height: 7)
+                Text(sidebarStatusText)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                Spacer()
+                if sidebarStatus == .error {
+                    Button {
+                        taskStore.lastError = nil
+                        taskStore.shouldPresentEngineError = false
+                        EngineManager.shared.restart(settings: settings)
+                        taskStore.reconnectToConfiguredRPCAfterEngineRestart()
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .help(Text("重启内核"))
+                }
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
         }
     }
 
-    private var sidebarConnectionColor: Color {
-        if engine.isRunning && taskStore.isConnected {
-            return .green
-        }
-        return engine.isRunning ? .orange : .red
+    private enum SidebarEngineStatus {
+        case normal
+        case connecting
+        case error
     }
 
-    private var sidebarConnectionText: LocalizedStringKey {
-        if !engine.isRunning {
-            return "内核已停止"
+    private var sidebarStatus: SidebarEngineStatus {
+        if engine.isRunning && taskStore.isConnected {
+            return .normal
         }
-        return taskStore.isConnected ? "连接正常" : "连接失败"
+        if engine.isRunning && taskStore.lastError == nil {
+            return .connecting
+        }
+        return .error
+    }
+
+    private var sidebarStatusColor: Color {
+        switch sidebarStatus {
+        case .normal:
+            return .green
+        case .connecting:
+            return .orange
+        case .error:
+            return .red
+        }
+    }
+
+    private var sidebarStatusText: LocalizedStringKey {
+        switch sidebarStatus {
+        case .normal:
+            return "内核正常"
+        case .connecting:
+            return "正在连接"
+        case .error:
+            return "内核错误"
+        }
     }
 
     @ViewBuilder

@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.20] - 2026-08-29
+
+### Improved
+- Redesigned sidebar engine connection status with minimalist indicator dots (🟢 Engine Ready, 🟠 Connecting, 🔴 Engine Error) to prevent label clipping and text wrapping.
+- Added one-click engine restart and reconnection button in the sidebar status bar on engine errors.
+
+---
+
+### Chinese
+### 改进
+- 优化侧边栏底部内核连接状态显示，改为极简指示点与状态文案（🟢 内核正常、🟠 正在连接、🔴 内核错误），彻底解决侧边栏文字折行拥挤问题。
+- 在内核发生错误时提供一键重启引擎与快速重连按钮。
+
+---
+
 ## [1.1.19] - 2026-08-27
 
 ### Changed
