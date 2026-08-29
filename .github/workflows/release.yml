@@ -200,7 +200,6 @@ jobs:
 
           mkdir -p deploy
           cp "$GITHUB_WORKSPACE/Maltex-${VERSION}-universal.zip" deploy/
-          cp "$GITHUB_WORKSPACE/Maltex-${VERSION}-arm64.zip" deploy/
           cp release_notes_en.md "deploy/release_notes_en.md"
           cp release_notes_zh.md "deploy/release_notes_zh.md"
           cp release_notes_en.md "deploy/release_notes.md"
