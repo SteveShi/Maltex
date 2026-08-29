@@ -1,6 +1,176 @@
 {
   "sourceLanguage" : "zh-Hans",
   "strings" : {
+    "欢迎使用 Maltex 1.2.0" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welcome to Maltex 1.2.0"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "欢迎使用 Maltex 1.2.0"
+          }
+        }
+      }
+    },
+    "探索全新优化与核心改进" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discover what's new and improved"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "探索全新优化与核心改进"
+          }
+        }
+      }
+    },
+    "单实例窗口体验" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Single-Instance Window"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "单实例窗口体验"
+          }
+        }
+      }
+    },
+    "优化外部事件路由机制，彻底修复点击磁力链接或浏览器扩展唤起时重复弹出多窗口的问题。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Optimized external event routing to eliminate duplicate window popups when opening magnet links or browser extensions."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "优化外部事件路由机制，彻底修复点击磁力链接或浏览器扩展唤起时重复弹出多窗口的问题。"
+          }
+        }
+      }
+    },
+    "全新状态指示器" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Streamlined Status Indicator"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全新状态指示器"
+          }
+        }
+      }
+    },
+    "重构侧边栏底部状态呈现，采用极简圆点与状态文案，告别空间拥挤与文字折行。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redesigned sidebar status indicator with minimalist dots and status labels, eliminating cramped layouts and text clipping."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重构侧边栏底部状态呈现，采用极简圆点与状态文案，告别空间拥挤与文字折行。"
+          }
+        }
+      }
+    },
+    "内核快速自愈" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Engine Auto-Recovery"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "内核快速自愈"
+          }
+        }
+      }
+    },
+    "当引擎遇到异常中断或连接错误时，支持直接在状态栏一键重启引擎与重连。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supports one-click engine restart and reconnection directly from the status bar when connection issues occur."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当引擎遇到异常中断或连接错误时，支持直接在状态栏一键重启引擎与重连。"
+          }
+        }
+      }
+    },
+    "开始使用" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Get Started"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开始使用"
+          }
+        }
+      }
+    },
+    "新功能介绍..." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What's New..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新功能介绍..."
+          }
+        }
+      }
+    },
     "内核正常" : {
       "extractionState" : "manual",
       "localizations" : {

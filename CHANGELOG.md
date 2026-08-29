@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] - 2026-08-30
+
+### Added
+- Added native SwiftUI `WhatsNewSheetView` to showcase key updates and improvements upon major app releases.
+
+### Improved
+- Redesigned sidebar engine connection status with minimalist indicator dots (🟢 Engine Ready, 🟠 Connecting, 🔴 Engine Error) to eliminate cramped layouts and text wrapping.
+- Added one-click engine restart and reconnection button in the sidebar status bar on engine errors.
+
+### Fixed
+- Fixed an issue where clicking magnet links or opening external URLs would open duplicate main window instances by migrating to a single-instance `Window` scene with proper external event handling.
+
+---
+
+### Chinese
+### 新增
+- 新增大版本更新专属的 SwiftUI 原生 `WhatsNewSheetView`（新功能介绍）弹窗，直观呈现版本核心升级点。
+
+### 改进
+- 优化侧边栏底部内核连接状态显示，改为极简指示点与状态文案（🟢 内核正常、🟠 正在连接、🔴 内核错误），彻底解决侧边栏文字折行拥挤问题。
+- 在内核发生错误时提供一键重启引擎与快速重连按钮。
+
+### 修复
+- 修复点击磁力链接或打开外部下载链接时会多弹出一个重复主界面的问题（将 `WindowGroup` 迁移为单实例 `Window` 场景并优化外部事件路由）。
+
+---
+
 ## [1.1.20] - 2026-08-29
 
 ### Improved

@@ -5,6 +5,8 @@ import UniformTypeIdentifiers
 struct MainView: View {
     @State private var selection: String? = "downloading"
     @State private var isShowingAddTask = false
+    @State private var isShowingWhatsNew = false
+    @AppStorage("lastPresentedWhatsNewVersion") private var lastPresentedWhatsNewVersion = ""
     @State private var selectedTaskGids: Set<String> = []
     @State private var confirmTask: DownloadTask? = nil
     @State private var pendingRevealGid: String? = nil
@@ -19,6 +21,18 @@ struct MainView: View {
             AddTaskView()
                 .environmentObject(taskStore)
                 .environmentObject(settings)
+        }
+        .sheet(isPresented: $isShowingWhatsNew) {
+            WhatsNewSheetView()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .maltexShowWhatsNew)) { _ in
+            isShowingWhatsNew = true
+        }
+        .task {
+            if lastPresentedWhatsNewVersion != "1.2.0" {
+                lastPresentedWhatsNewVersion = "1.2.0"
+                isShowingWhatsNew = true
+            }
         }
         .sheet(item: $confirmTask) { snapshotTask in
             TorrentConfirmView(task: snapshotTask) { path, selectedIndices in

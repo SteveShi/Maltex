@@ -3,6 +3,7 @@ import AppKit
 
 extension Notification.Name {
     static let maltexOpenFileURL = Notification.Name("maltex.openFileURL")
+    static let maltexShowWhatsNew = Notification.Name("maltex.showWhatsNew")
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -23,6 +24,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             NotificationCenter.default.post(name: .maltexOpenFileURL, object: url)
         }
         application.reply(toOpenOrPrint: .success)
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if !flag {
+            for window in sender.windows where window.canBecomeMain {
+                window.makeKeyAndOrderFront(nil)
+                return true
+            }
+        }
+        return true
     }
 }
 
@@ -45,10 +56,11 @@ struct MaltexApp: App {
     }
 
     var body: some Scene {
-        WindowGroup(id: "main") {
+        Window("Maltex", id: "main") {
             MainView()
                 .environmentObject(taskStore)
                 .environmentObject(settingsStore)
+                .handlesExternalEvents(preferring: ["main", "*"], allowing: ["main", "*"])
                 .onOpenURL { url in
                     handleIncomingURL(url)
                 }
@@ -72,6 +84,7 @@ struct MaltexApp: App {
                     await autoSyncTrackersOnLaunch()
                 }
         }
+        .handlesExternalEvents(matching: ["main", "*"])
         .windowToolbarStyle(.unified)
         .commands {
             SidebarCommands()
@@ -80,6 +93,10 @@ struct MaltexApp: App {
                     updater.checkForUpdates()
                 }
                 .disabled(!updater.canCheckForUpdates)
+
+                Button(LocalizedStringKey("新功能介绍...")) {
+                    NotificationCenter.default.post(name: .maltexShowWhatsNew, object: nil)
+                }
             }
         }
 
@@ -126,6 +143,11 @@ struct MaltexApp: App {
     }
 
     private func handleIncomingURL(_ url: URL) {
+        NSApp.activate(ignoringOtherApps: true)
+        if let window = NSApp.windows.first(where: { $0.canBecomeMain }) {
+            window.makeKeyAndOrderFront(nil)
+        }
+
         let urlString = url.absoluteString
         var downloadURL: String = ""
 
