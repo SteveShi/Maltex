@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0-beta1] - 2026-08-31
+
+### Added
+- Integrated experimental `aria2-rust` engine (v0.3.4) as a new engine option alongside standard `aria2` and `aria2-next`.
+- Added "Built-in Aria2 Rust (Experimental)" in Settings → Aria2 Source.
+- Added automatic fallback to standard bundled aria2 when aria2-rust fails verification or exits unexpectedly.
+
+### Changed
+- Dropped Intel (x86_64) architecture support; builds are now dedicated Apple Silicon (arm64) only.
+- Disabled automated CI release workflows on this branch; releases are manually published as pre-releases.
+
+---
+
+### Chinese
+### 新增
+- 集成实验性 `aria2-rust` 下载引擎 (v0.3.4)，与标准 `aria2` 及 `aria2-next` 并列作为内置引擎选项。
+- 设置 → Aria2 来源中新增「内置 Aria2 Rust（实验）」选项。
+- 当 aria2-rust 二进制验证失败或异常退出时，提供自动回退至内置标准 aria2 机制。
+
+### 变更
+- 剥离 Intel (x86_64) 架构，全面转向专为 Apple Silicon (arm64) 架构构建。
+- 移除本分支上的 CI 自动构建流水线，后续通过手动发布 pre-release。
+
+---
+
 ## [1.2.0] - 2026-08-30
 
 ### Added

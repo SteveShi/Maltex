@@ -301,6 +301,7 @@ struct Aria2SettingsView: View {
         switch settings.aria2BinarySource {
         case .bundled: "使用 Maltex 随附的 aria2c，所有启动参数均由本页控制。"
         case .bundledAria2Next: "使用 Maltex 随附的 aria2-next 实验内核，启动参数会按 Aria2 Next 兼容面生成。"
+        case .bundledAria2Rust: "使用 Maltex 随附的 Aria2 Rust 实验内核（Rust 重写），RPC 接口兼容标准 aria2。"
         case .commandLine: "使用 Homebrew 或系统路径中的 aria2c，仍由 Maltex 启动和停止。"
         case .custom: "使用指定路径的 aria2c，仍由 Maltex 启动和停止。"
         }

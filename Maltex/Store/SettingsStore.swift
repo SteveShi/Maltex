@@ -5,6 +5,7 @@ class SettingsStore: ObservableObject {
     enum Aria2BinarySource: String, CaseIterable, Identifiable {
         case bundled
         case bundledAria2Next
+        case bundledAria2Rust
         case commandLine
         case custom
 
@@ -14,6 +15,7 @@ class SettingsStore: ObservableObject {
             switch self {
             case .bundled: "内置 Aria2"
             case .bundledAria2Next: "内置 Aria2 Next（实验）"
+            case .bundledAria2Rust: "内置 Aria2 Rust（实验）"
             case .commandLine: "命令行 Aria2"
             case .custom: "自定义 Aria2"
             }

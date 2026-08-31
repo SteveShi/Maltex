@@ -70,8 +70,8 @@ class EngineManager: ObservableObject {
             try? msg.appendLineToURL(fileURL: appLogPath)
             print(msg)
 
-            // Auto-fallback to bundled aria2 if aria2-next fails verification
-            if settings.aria2BinarySource == .bundledAria2Next {
+            // Auto-fallback to bundled aria2 if experimental engine fails verification
+            if settings.aria2BinarySource == .bundledAria2Next || settings.aria2BinarySource == .bundledAria2Rust {
                 try? "[Engine] Attempting fallback to bundled aria2...".appendLineToURL(fileURL: appLogPath)
                 let fallbackSettings = SettingsStore()
                 fallbackSettings.aria2BinarySource = .bundled
@@ -143,9 +143,9 @@ class EngineManager: ObservableObject {
                     try? errorMsg.appendLineToURL(fileURL: self.appLogPath)
                     print(errorMsg)
 
-                    // Auto-fallback to bundled aria2 if aria2-next crashes immediately
-                    if settings.aria2BinarySource == .bundledAria2Next {
-                        try? "[Engine] aria2-next failed to start, falling back to bundled aria2...".appendLineToURL(fileURL: self.appLogPath)
+                    // Auto-fallback to bundled aria2 if experimental engine crashes immediately
+                    if settings.aria2BinarySource == .bundledAria2Next || settings.aria2BinarySource == .bundledAria2Rust {
+                        try? "[Engine] Experimental engine failed to start, falling back to bundled aria2...".appendLineToURL(fileURL: self.appLogPath)
                         let fallbackSettings = SettingsStore()
                         fallbackSettings.aria2BinarySource = .bundled
                         try? await Task.sleep(nanoseconds: 500_000_000)
@@ -162,9 +162,9 @@ class EngineManager: ObservableObject {
             try? "[Engine] \(msg)".appendLineToURL(fileURL: appLogPath)
             print(msg)
 
-            // Auto-fallback to bundled aria2 if aria2-next fails to launch
-            if settings.aria2BinarySource == .bundledAria2Next {
-                try? "[Engine] aria2-next launch failed, falling back to bundled aria2...".appendLineToURL(fileURL: appLogPath)
+            // Auto-fallback to bundled aria2 if experimental engine fails to launch
+            if settings.aria2BinarySource == .bundledAria2Next || settings.aria2BinarySource == .bundledAria2Rust {
+                try? "[Engine] Experimental engine launch failed, falling back to bundled aria2...".appendLineToURL(fileURL: appLogPath)
                 let fallbackSettings = SettingsStore()
                 fallbackSettings.aria2BinarySource = .bundled
                 start(settings: fallbackSettings)
@@ -325,6 +325,8 @@ class EngineManager: ObservableObject {
             return bundledBinaryURL()
         case .bundledAria2Next:
             return bundledAria2NextBinaryURL()
+        case .bundledAria2Rust:
+            return bundledAria2RustBinaryURL()
         case .commandLine:
             return commandLineBinaryURL()
         case .custom:
@@ -338,12 +340,7 @@ class EngineManager: ObservableObject {
             return bundleBin
         }
         let currentDir = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
-#if arch(arm64)
-        let archFolder = "arm64"
-#else
-        let archFolder = "x64"
-#endif
-        return currentDir.appendingPathComponent("extra/darwin/\(archFolder)/engine/aria2c")
+        return currentDir.appendingPathComponent("extra/darwin/arm64/engine/aria2c")
     }
 
     private func bundledAria2NextBinaryURL() -> URL? {
@@ -351,12 +348,15 @@ class EngineManager: ObservableObject {
             return bundleBin
         }
         let currentDir = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
-#if arch(arm64)
-        let archFolder = "arm64"
-#else
-        let archFolder = "x64"
-#endif
-        return currentDir.appendingPathComponent("extra/darwin/\(archFolder)/engine/aria2-next")
+        return currentDir.appendingPathComponent("extra/darwin/arm64/engine/aria2-next")
+    }
+
+    private func bundledAria2RustBinaryURL() -> URL? {
+        if let bundleBin = Bundle.main.url(forResource: "aria2-rust", withExtension: nil) {
+            return bundleBin
+        }
+        let currentDir = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+        return currentDir.appendingPathComponent("extra/darwin/arm64/engine/aria2-rust")
     }
 
     private func commandLineBinaryURL() -> URL? {
@@ -390,35 +390,45 @@ class EngineManager: ObservableObject {
 
         // For aria2-next, verify it's actually aria2-next by checking version output
         if expectedType == .bundledAria2Next {
-            let process = Process()
-            process.executableURL = url
-            process.arguments = ["--version"]
+            return verifyVersionOutput(at: url, containing: "Aria2 Next", label: "Aria2 Next")
+        }
 
-            let pipe = Pipe()
-            process.standardOutput = pipe
-            process.standardError = pipe
-
-            do {
-                try process.run()
-                process.waitUntilExit()
-
-                let data = pipe.fileHandleForReading.readDataToEndOfFile()
-                if let output = String(data: data, encoding: .utf8) {
-                    let isAria2Next = output.contains("Aria2 Next")
-                    if !isAria2Next {
-                        print("[Engine] Binary verification failed: expected Aria2 Next but got different version")
-                        print("[Engine] Version output: \(output.prefix(200))")
-                    }
-                    return isAria2Next
-                }
-            } catch {
-                print("[Engine] Failed to verify binary: \(error)")
-                return false
-            }
+        // For aria2-rust, verify it's actually aria2-rust by checking version output
+        if expectedType == .bundledAria2Rust {
+            return verifyVersionOutput(at: url, containing: "aria2-rust", label: "aria2-rust")
         }
 
         // For other types, basic executable check is sufficient
         return true
+    }
+
+    private func verifyVersionOutput(at url: URL, containing expected: String, label: String) -> Bool {
+        let process = Process()
+        process.executableURL = url
+        process.arguments = ["--version"]
+
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = pipe
+
+        do {
+            try process.run()
+            process.waitUntilExit()
+
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            if let output = String(data: data, encoding: .utf8) {
+                let matched = output.contains(expected)
+                if !matched {
+                    print("[Engine] Binary verification failed: expected \(label) but got different version")
+                    print("[Engine] Version output: \(output.prefix(200))")
+                }
+                return matched
+            }
+        } catch {
+            print("[Engine] Failed to verify binary: \(error)")
+            return false
+        }
+        return false
     }
 
     private func stopPreviousManagedProcessIfNeeded() {

@@ -3341,6 +3341,23 @@
         }
       }
     },
+    "内置 Aria2 Rust（实验）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Built-in Aria2 Rust (Experimental)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "内置 Aria2 Rust（实验）"
+          }
+        }
+      }
+    },
     "使用 Maltex 随附的 aria2-next 实验内核，启动参数会按 Aria2 Next 兼容面生成。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3354,6 +3371,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "使用 Maltex 随附的 aria2-next 实验内核，启动参数会按 Aria2 Next 兼容面生成。"
+          }
+        }
+      }
+    },
+    "使用 Maltex 随附的 Aria2 Rust 实验内核（Rust 重写），RPC 接口兼容标准 aria2。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use the experimental Aria2 Rust engine (Rust rewrite) bundled with Maltex. RPC interface is compatible with standard aria2."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用 Maltex 随附的 Aria2 Rust 实验内核（Rust 重写），RPC 接口兼容标准 aria2。"
           }
         }
       }

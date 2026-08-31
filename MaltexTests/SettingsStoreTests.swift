@@ -141,4 +141,14 @@ final class SettingsStoreTests: XCTestCase {
         XCTAssertTrue(settings.checkCertificate)
         XCTAssertFalse(settings.allowOverwrite)
     }
+
+    func testAria2BinarySources() {
+        let allSources = SettingsStore.Aria2BinarySource.allCases
+        XCTAssertEqual(allSources.count, 5)
+        XCTAssertTrue(allSources.contains(.bundled))
+        XCTAssertTrue(allSources.contains(.bundledAria2Next))
+        XCTAssertTrue(allSources.contains(.bundledAria2Rust))
+        XCTAssertTrue(allSources.contains(.commandLine))
+        XCTAssertTrue(allSources.contains(.custom))
+    }
 }
