@@ -79,14 +79,36 @@ jobs:
       - name: Resolve Package Dependencies
         run: xcodebuild -resolvePackageDependencies -scheme Maltex -project Maltex.xcodeproj
 
-      - name: Build Universal App
+      - name: Build Apple Silicon (arm64) App
         run: |
           VERSION_CLEAN=${{ env.VERSION }}
           xcodebuild build \
             -scheme Maltex \
-            -destination "platform=macOS" \
+            -destination "platform=macOS,arch=arm64" \
             -configuration Release \
-            -derivedDataPath ./DerivedData \
+            -derivedDataPath ./DerivedData/arm64 \
+            MARKETING_VERSION=$VERSION_CLEAN \
+            CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            DEBUG_INFORMATION_FORMAT=dwarf \
+            ENABLE_APP_INTENTS_METADATA_EXTRACTION=NO \
+            ONLY_ACTIVE_ARCH=YES \
+            ARCHS=arm64 \
+            MACOSX_DEPLOYMENT_TARGET=14.0 \
+            SWIFT_STRICT_CONCURRENCY=minimal \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            -skipPackageUpdates
+
+      - name: Build Intel (x86_64) App
+        run: |
+          VERSION_CLEAN=${{ env.VERSION }}
+          xcodebuild build \
+            -scheme Maltex \
+            -destination "platform=macOS,arch=x86_64" \
+            -configuration Release \
+            -derivedDataPath ./DerivedData/x86_64 \
             MARKETING_VERSION=$VERSION_CLEAN \
             CURRENT_PROJECT_VERSION=${{ github.run_number }} \
             CODE_SIGN_IDENTITY="" \
@@ -95,63 +117,51 @@ jobs:
             DEBUG_INFORMATION_FORMAT=dwarf \
             ENABLE_APP_INTENTS_METADATA_EXTRACTION=NO \
             ONLY_ACTIVE_ARCH=NO \
-            MACOSX_DEPLOYMENT_TARGET=15.0 \
+            ARCHS=x86_64 \
+            MACOSX_DEPLOYMENT_TARGET=14.0 \
             SWIFT_STRICT_CONCURRENCY=minimal \
             COMPILER_INDEX_STORE_ENABLE=NO \
             -skipPackageUpdates
 
-      - name: Prepare Universal App
-        run: |
-          mkdir -p Build/Universal
-          cp -R ./DerivedData/Build/Products/Release/Maltex.app Build/Universal/
-          # Ad-hoc sign the app with Hardened Runtime options to ensure system features work correctly
-          codesign --force --deep --sign - --options=runtime --entitlements Maltex/Maltex.entitlements Build/Universal/Maltex.app
-
-      - name: Split Architectures (arm64)
+      - name: Package arm64 App
         run: |
           mkdir -p Build/arm64/Maltex.app
+          cp -R ./DerivedData/arm64/Build/Products/Release/Maltex.app/ Build/arm64/Maltex.app/
           
-          # Copy Universal app to arm64 folder
-          cp -R Build/Universal/Maltex.app/ Build/arm64/Maltex.app/
+          # Ensure arm64 bundled engine binaries are present
+          cp extra/darwin/arm64/engine/aria2c Build/arm64/Maltex.app/Contents/Resources/aria2c
+          cp extra/darwin/arm64/engine/aria2-next Build/arm64/Maltex.app/Contents/Resources/aria2-next
+          cp extra/darwin/arm64/engine/aria2.conf Build/arm64/Maltex.app/Contents/Resources/aria2.conf
+          chmod +x Build/arm64/Maltex.app/Contents/Resources/aria2c Build/arm64/Maltex.app/Contents/Resources/aria2-next
           
-          # Thin main executable
-          lipo -thin arm64 Build/Universal/Maltex.app/Contents/MacOS/Maltex -output Build/arm64/Maltex.app/Contents/MacOS/Maltex
-          
-          # Thin Safari Extension
-          lipo -thin arm64 "Build/Universal/Maltex.app/Contents/PlugIns/Maltex Extension.appex/Contents/MacOS/Maltex Extension" -output "Build/arm64/Maltex.app/Contents/PlugIns/Maltex Extension.appex/Contents/MacOS/Maltex Extension"
-
-          # Re-sign thinned app deeply with runtime options
+          # Ad-hoc sign arm64 app deeply
           codesign --force --deep --sign - --options=runtime --entitlements Maltex/Maltex.entitlements Build/arm64/Maltex.app
+
+      - name: Package x86_64 App
+        run: |
+          mkdir -p Build/x86_64/Maltex.app
+          cp -R ./DerivedData/x86_64/Build/Products/Release/Maltex.app/ Build/x86_64/Maltex.app/
+          
+          # Replace with genuine x86_64 bundled engine binaries
+          cp extra/darwin/x64/engine/aria2c Build/x86_64/Maltex.app/Contents/Resources/aria2c
+          cp extra/darwin/x64/engine/aria2-next Build/x86_64/Maltex.app/Contents/Resources/aria2-next
+          cp extra/darwin/x64/engine/aria2.conf Build/x86_64/Maltex.app/Contents/Resources/aria2.conf
+          chmod +x Build/x86_64/Maltex.app/Contents/Resources/aria2c Build/x86_64/Maltex.app/Contents/Resources/aria2-next
+          
+          # Ad-hoc sign x86_64 app deeply
+          codesign --force --deep --sign - --options=runtime --entitlements Maltex/Maltex.entitlements Build/x86_64/Maltex.app
 
       - name: Create DMGs and ZIPs
         id: create_assets
         run: |
           VERSION=${{ env.VERSION }}
           
-          # 1. Universal ZIP
-          cd Build/Universal
-          zip -qy -r "../../Maltex-${VERSION}-universal.zip" "Maltex.app"
-          cd -
-
-          # 2. Universal DMG
-          create-dmg \
-            --volname "Maltex Installer" \
-            --volicon "Maltex/Assets.xcassets/AppIcon.appiconset/icon.png" \
-            --window-pos 200 120 \
-            --window-size 800 400 \
-            --icon-size 100 \
-            --icon "Maltex.app" 200 190 \
-            --hide-extension "Maltex.app" \
-            --app-drop-link 600 185 \
-            "Maltex-${VERSION}-universal.dmg" \
-            "Build/Universal/Maltex.app"
-
-          # 3. arm64 ZIP
+          # 1. arm64 ZIP
           cd Build/arm64
           zip -qy -r "../../Maltex-${VERSION}-arm64.zip" "Maltex.app"
           cd -
 
-          # 4. arm64 DMG
+          # 2. arm64 DMG
           create-dmg \
             --volname "Maltex Installer (Apple Silicon)" \
             --volicon "Maltex/Assets.xcassets/AppIcon.appiconset/icon.png" \
@@ -163,8 +173,24 @@ jobs:
             --app-drop-link 600 185 \
             "Maltex-${VERSION}-arm64.dmg" \
             "Build/arm64/Maltex.app"
-          
-          echo "ZIP_NAME=Maltex-${VERSION}-universal.zip" >> $GITHUB_ENV
+
+          # 3. x86_64 ZIP
+          cd Build/x86_64
+          zip -qy -r "../../Maltex-${VERSION}-x86_64.zip" "Maltex.app"
+          cd -
+
+          # 4. x86_64 DMG
+          create-dmg \
+            --volname "Maltex Installer (Intel)" \
+            --volicon "Maltex/Assets.xcassets/AppIcon.appiconset/icon.png" \
+            --window-pos 200 120 \
+            --window-size 800 400 \
+            --icon-size 100 \
+            --icon "Maltex.app" 200 190 \
+            --hide-extension "Maltex.app" \
+            --app-drop-link 600 185 \
+            "Maltex-${VERSION}-x86_64.dmg" \
+            "Build/x86_64/Maltex.app"
 
       - name: Extract Release Notes (en & zh)
         run: |
@@ -199,7 +225,8 @@ jobs:
           fi
 
           mkdir -p deploy
-          cp "$GITHUB_WORKSPACE/Maltex-${VERSION}-universal.zip" deploy/
+          cp "$GITHUB_WORKSPACE/Maltex-${VERSION}-arm64.zip" deploy/
+          cp "$GITHUB_WORKSPACE/Maltex-${VERSION}-x86_64.zip" deploy/
           cp release_notes_en.md "deploy/release_notes_en.md"
           cp release_notes_zh.md "deploy/release_notes_zh.md"
           cp release_notes_en.md "deploy/release_notes.md"
@@ -238,10 +265,10 @@ jobs:
           prerelease: false
           body_path: release_notes.md
           files: |
-            Maltex-*-universal.zip
-            Maltex-*-universal.dmg
             Maltex-*-arm64.zip
             Maltex-*-arm64.dmg
+            Maltex-*-x86_64.zip
+            Maltex-*-x86_64.dmg
             release_notes_en.md
             release_notes_zh.md
             appcast.xml
@@ -253,17 +280,17 @@ jobs:
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
         run: |
           VERSION="${{ env.VERSION }}"
-          DMG_NAME="Maltex-${VERSION}-universal.dmg"
-          SHA256=$(shasum -a 256 "$DMG_NAME" | awk '{print $1}')
+          ARM64_SHA=$(shasum -a 256 "Maltex-${VERSION}-arm64.dmg" | awk '{print $1}')
+          X86_SHA=$(shasum -a 256 "Maltex-${VERSION}-x86_64.dmg" | awk '{print $1}')
           
           git clone https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/SteveShi/homebrew-tap.git tap-repo
           cd tap-repo
           
           sed -i '' "s/version \".*\"/version \"$VERSION\"/" Casks/maltex.rb
-          sed -i '' "s/sha256 \".*\"/sha256 \"$SHA256\"/" Casks/maltex.rb
+          sed -i '' "s/sha256 arm:.*intel:.*/sha256 arm: \"$ARM64_SHA\", intel: \"$X86_SHA\"/" Casks/maltex.rb || sed -i '' "s/sha256 \".*\"/sha256 \"$ARM64_SHA\"/" Casks/maltex.rb
           
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add Casks/maltex.rb
-          git commit -m "Update maltex to $VERSION"
-          git push
+          git commit -m "Update maltex to $VERSION" || true
+          git push || true

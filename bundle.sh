@@ -67,28 +67,28 @@ echo "✅ Safari Extension integrated."
 echo "📝 Copying Info.plist..."
 cp "Maltex/Info.plist" "${BUNDLE_PATH}/Contents/Info.plist"
 
-# 5. Copy aria2c engine
-echo "⚙️ Copying aria2c engine..."
-ENGINE_PATH="extra/darwin/arm64/engine/aria2c"
-if [ ! -f "$ENGINE_PATH" ]; then
-    ENGINE_PATH="extra/darwin/x64/engine/aria2c"
+if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "x64" ]; then
+    ENGINE_DIR="extra/darwin/x64/engine"
+else
+    ENGINE_DIR="extra/darwin/arm64/engine"
 fi
+
+# 5. Copy aria2c engine
+echo "⚙️ Copying aria2c engine ($ENGINE_DIR)..."
+ENGINE_PATH="${ENGINE_DIR}/aria2c"
 
 if [ -f "$ENGINE_PATH" ]; then
     cp "$ENGINE_PATH" "${BUNDLE_PATH}/Contents/Resources/aria2c"
     chmod +x "${BUNDLE_PATH}/Contents/Resources/aria2c"
     echo "✅ Engine integrated."
 else
-    echo "❌ Critical Error: aria2c engine not found."
+    echo "❌ Critical Error: aria2c engine not found at $ENGINE_PATH"
     exit 1
 fi
 
 # 5a. Copy experimental aria2-next engine
 echo "⚙️ Copying aria2-next experimental engine..."
-NEXT_ENGINE_PATH="extra/darwin/arm64/engine/aria2-next"
-if [ ! -f "$NEXT_ENGINE_PATH" ]; then
-    NEXT_ENGINE_PATH="extra/darwin/x64/engine/aria2-next"
-fi
+NEXT_ENGINE_PATH="${ENGINE_DIR}/aria2-next"
 
 if [ -f "$NEXT_ENGINE_PATH" ]; then
     cp "$NEXT_ENGINE_PATH" "${BUNDLE_PATH}/Contents/Resources/aria2-next"
@@ -100,7 +100,7 @@ fi
 
 # 5b. Copy aria2.conf
 echo "📄 Copying aria2.conf..."
-CONF_PATH="extra/darwin/arm64/engine/aria2.conf"
+CONF_PATH="${ENGINE_DIR}/aria2.conf"
 if [ -f "$CONF_PATH" ]; then
     cp "$CONF_PATH" "${BUNDLE_PATH}/Contents/Resources/aria2.conf"
     echo "✅ Config integrated."
