@@ -32,7 +32,6 @@ struct TaskDetailView: View {
                 .buttonStyle(.plain)
             }
             .padding()
-            .background(Color(NSColor.windowBackgroundColor))
 
             Divider()
 

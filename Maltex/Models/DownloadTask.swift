@@ -14,7 +14,7 @@ struct DownloadTask: Identifiable, Codable, Hashable {
     var seeder: Bool
     var errorCode: String?
     var errorMessage: String?
-    var followedBy: String?
+    var followedBy: [String]?
     var belongsTo: String?
     var dir: String
     var files: [DownloadFile]
@@ -178,7 +178,13 @@ struct DownloadTask: Identifiable, Codable, Hashable {
         }
         errorCode = try container.decodeIfPresent(String.self, forKey: .errorCode)
         errorMessage = try container.decodeIfPresent(String.self, forKey: .errorMessage)
-        followedBy = try container.decodeIfPresent(String.self, forKey: .followedBy)
+        if let list = try? container.decode([String].self, forKey: .followedBy) {
+            followedBy = list
+        } else if let single = try? container.decode(String.self, forKey: .followedBy) {
+            followedBy = [single]
+        } else {
+            followedBy = nil
+        }
         belongsTo = try container.decodeIfPresent(String.self, forKey: .belongsTo)
         dir = try container.decode(String.self, forKey: .dir)
         files = try container.decode([DownloadFile].self, forKey: .files)

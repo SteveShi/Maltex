@@ -3612,6 +3612,210 @@
           }
         }
       }
+    },
+    "与现有下载任务冲突（相同内容），请先删除已有任务再重新添加。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conflicts with an existing download task (same content). Please remove the existing task before re-adding."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "与现有下载任务冲突（相同内容），请先删除已有任务再重新添加。"
+          }
+        }
+      }
+    },
+    "任务已存在" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Task Already Exists"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "任务已存在"
+          }
+        }
+      }
+    },
+    "重新下载" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redownload"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新下载"
+          }
+        }
+      }
+    },
+    "相同的下载任务已在列表中。是否删除已有任务并重新下载？" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An identical download task is already in the list. Do you want to remove the existing task and redownload?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "相同的下载任务已在列表中。是否删除已有任务并重新下载？"
+          }
+        }
+      }
+    },
+    "相同的种子任务已在列表中。请先在任务列表中删除已有任务，然后再尝试添加。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An identical torrent task is already in the list. Please remove the existing task before re-adding."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "相同的种子任务已在列表中。请先在任务列表中删除已有任务，然后再尝试添加。"
+          }
+        }
+      }
+    },
+    "欢迎使用 Maltex 1.2.1" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welcome to Maltex 1.2.1"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "欢迎使用 Maltex 1.2.1"
+          }
+        }
+      }
+    },
+    "原生侧边检查器" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Native Side Inspector"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "原生侧边检查器"
+          }
+        }
+      }
+    },
+    "任务详情全新升级为原生 Inspector 面板，自动自适应宽度，不再遮挡任务列表。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Task details upgraded to a native macOS Inspector panel that dynamically adapts its width without covering the task list."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "任务详情全新升级为原生 Inspector 面板，自动自适应宽度，不再遮挡任务列表。"
+          }
+        }
+      }
+    },
+    "磁力链接下载确认" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Magnet Link Download Confirmation"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "磁力链接下载确认"
+          }
+        }
+      }
+    },
+    "磁力链接拉取元数据后自动弹出确认弹窗，支持文件挑选与自定义下载路径。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Magnet links now prompt a confirmation sheet after fetching metadata, allowing file selection and custom download destination."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "磁力链接拉取元数据后自动弹出确认弹窗，支持文件挑选与自定义下载路径。"
+          }
+        }
+      }
+    },
+    "重复下载智能处理" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Smart Duplicate Handling"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重复下载智能处理"
+          }
+        }
+      }
+    },
+    "智能识别已存在的磁链任务，友好提醒并支持一键清理旧任务重新下载。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Intelligently identifies existing magnet tasks, prompting a friendly confirmation to remove and redownload in one click."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智能识别已存在的磁链任务，友好提醒并支持一键清理旧任务重新下载。"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

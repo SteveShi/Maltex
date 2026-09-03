@@ -14,7 +14,7 @@ struct WhatsNewSheetView: View {
                     .symbolRenderingMode(.hierarchical)
 
                 VStack(spacing: 4) {
-                    Text("欢迎使用 Maltex 1.2.0")
+                    Text("欢迎使用 Maltex 1.2.1")
                         .font(.title2)
                         .fontWeight(.bold)
 
@@ -28,24 +28,24 @@ struct WhatsNewSheetView: View {
             // Features List
             VStack(spacing: 18) {
                 WhatsNewFeatureRow(
-                    icon: "macwindow.on.rectangle",
+                    icon: "sidebar.right",
                     color: .accentColor,
-                    title: "单实例窗口体验",
-                    description: "优化外部事件路由机制，彻底修复点击磁力链接或浏览器扩展唤起时重复弹出多窗口的问题。"
+                    title: "原生侧边检查器",
+                    description: "任务详情全新升级为原生 Inspector 面板，自动自适应宽度，不再遮挡任务列表。"
                 )
 
                 WhatsNewFeatureRow(
-                    icon: "circle.inset.filled",
+                    icon: "link.badge.plus",
+                    color: .blue,
+                    title: "磁力链接下载确认",
+                    description: "磁力链接拉取元数据后自动弹出确认弹窗，支持文件挑选与自定义下载路径。"
+                )
+
+                WhatsNewFeatureRow(
+                    icon: "arrow.clockwise.circle",
                     color: .green,
-                    title: "全新状态指示器",
-                    description: "重构侧边栏底部状态呈现，采用极简圆点与状态文案，告别空间拥挤与文字折行。"
-                )
-
-                WhatsNewFeatureRow(
-                    icon: "arrow.triangle.2.circlepath.circle.fill",
-                    color: .orange,
-                    title: "内核快速自愈",
-                    description: "当引擎遇到异常中断或连接错误时，支持直接在状态栏一键重启引擎与重连。"
+                    title: "重复下载智能处理",
+                    description: "智能识别已存在的磁链任务，友好提醒并支持一键清理旧任务重新下载。"
                 )
             }
             .padding(.horizontal, 8)

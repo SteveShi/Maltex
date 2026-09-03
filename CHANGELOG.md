@@ -2,6 +2,41 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.1] - 2026-09-03
+
+### Added
+- Added native macOS 14+ Inspector panel for download task details that slides out from the right without obscuring the task list.
+- Added duplicate download detection for magnet links with one-click re-download support.
+- Added support for BitTorrent metadata tracking on magnet links, automatically prompting download confirmation dialog with file selection once metadata is retrieved.
+
+### Improved
+- Polished Task Detail View styling to blend seamlessly with the native translucent Inspector surface.
+- Enhanced engine startup sequence with automatic port conflict resolution for orphaned background processes.
+
+### Fixed
+- Fixed an issue where magnet links would bypass the download confirmation and file selection sheet.
+- Fixed an issue where re-adding an existing magnet link resulted in a generic engine error dialog.
+- Fixed task detail panel overlapping and blocking the bottom half of the download task list.
+
+---
+
+### Chinese
+### 新增
+- 任务详情重构升级为 macOS 14+ 原生侧边检查器（Inspector）面板，自动自适应宽度，彻底解决遮挡任务列表的问题。
+- 新增磁力链接重复下载检测机制，在相同任务已存在时提供友好的确认提示并支持一键重新下载。
+- 新增磁力链接元数据异步追踪，在后台获取种子信息完成后自动唤起下载确认与文件勾选弹窗。
+
+### 优化
+- 优化任务详情面板视觉质感，与 macOS 检查器毛玻璃背景深度融合。
+- 增强内核启动守护机制，在启动前自动检测并释放占用端口的孤儿进程，彻底杜绝端口冲突导致内核报错退出。
+
+### 修复
+- 修复添加磁力链接时跳过下载确认菜单直接开始下载的问题。
+- 修复重复添加相同磁力链接时直接抛出通用“引擎错误”弹窗的问题。
+- 修复打开任务详情卡片会遮挡主界面下半部分任务列表的问题。
+
+---
+
 ## [1.2.0] - 2026-08-30
 
 ### Added

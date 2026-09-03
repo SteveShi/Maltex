@@ -29,8 +29,8 @@ struct MainView: View {
             isShowingWhatsNew = true
         }
         .task {
-            if lastPresentedWhatsNewVersion != "1.2.0" {
-                lastPresentedWhatsNewVersion = "1.2.0"
+            if lastPresentedWhatsNewVersion != "1.2.1" {
+                lastPresentedWhatsNewVersion = "1.2.1"
                 isShowingWhatsNew = true
             }
         }
@@ -75,6 +75,10 @@ struct MainView: View {
             if let gid = pendingRevealGid {
                 revealAddedTaskIfReady(gid: gid)
             }
+            checkPendingMagnetConfirm()
+        }
+        .onChange(of: taskStore.pendingMagnetConfirmGid) {
+            checkPendingMagnetConfirm()
         }
         .onChange(of: selection) {
             withAnimation(.spring()) {
@@ -98,8 +102,39 @@ struct MainView: View {
                 Text(error)
             }
         }
+        .alert("任务已存在", isPresented: duplicateAlertBinding) {
+            if taskStore.pendingDuplicateDownload?.canAutoRedownload == true {
+                Button("重新下载", role: .destructive) {
+                    taskStore.forceRedownload()
+                }
+                Button("取消", role: .cancel) {
+                    taskStore.pendingDuplicateDownload = nil
+                }
+            } else {
+                Button("确定", role: .cancel) {
+                    taskStore.pendingDuplicateDownload = nil
+                }
+            }
+        } message: {
+            if taskStore.pendingDuplicateDownload?.canAutoRedownload == true {
+                Text("相同的下载任务已在列表中。是否删除已有任务并重新下载？")
+            } else {
+                Text("相同的种子任务已在列表中。请先在任务列表中删除已有任务，然后再尝试添加。")
+            }
+        }
     }
 
+
+    private var duplicateAlertBinding: Binding<Bool> {
+        Binding(
+            get: { taskStore.pendingDuplicateDownload != nil },
+            set: {
+                if !$0 {
+                    taskStore.pendingDuplicateDownload = nil
+                }
+            }
+        )
+    }
 
     private var engineAlertBinding: Binding<Bool> {
         Binding(
@@ -214,7 +249,7 @@ struct MainView: View {
 
     @ViewBuilder
     private var detailView: some View {
-        ZStack(alignment: .bottom) {
+        Group {
             if let selection {
                 TaskListView(
                     status: selection,
@@ -224,22 +259,30 @@ struct MainView: View {
             } else {
                 ContentUnavailableView("请选择一个分类", systemImage: "sidebar.left")
             }
-
+        }
+        .inspector(isPresented: inspectorBinding) {
             if let detailTask = selectedDetailTask {
                 TaskDetailView(task: detailTask) {
                     withAnimation(.spring()) {
                         selectedTaskGids.removeAll()
                     }
                 }
-                .frame(height: 400)
-                .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
-                .shadow(color: .black.opacity(0.3), radius: 20, x: 0, y: -5)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-                .padding(.horizontal, 20)
-                .padding(.bottom, 20)
-                .zIndex(10)
+                .inspectorColumnWidth(min: 280, ideal: 350, max: 450)
             }
         }
+    }
+
+    private var inspectorBinding: Binding<Bool> {
+        Binding(
+            get: { selectedDetailTask != nil },
+            set: { newValue in
+                if !newValue {
+                    withAnimation(.spring()) {
+                        selectedTaskGids.removeAll()
+                    }
+                }
+            }
+        )
     }
 
     private var selectedDetailTask: DownloadTask? {
@@ -252,6 +295,12 @@ struct MainView: View {
     }
 
     private func revealAddedTaskIfReady(gid: String) {
+        // 若此任务为正在等待下载元数据的磁力链接元数据任务，等待派生真正下载任务后再处理
+        if taskStore.isPendingMagnetMetadata(gid: gid) {
+            pendingRevealGid = nil
+            return
+        }
+
         guard let task = taskStore.tasks.first(where: { $0.gid == gid }) else { return }
 
         if task.bittorrent != nil && task.status == .paused {
@@ -264,6 +313,15 @@ struct MainView: View {
 
         selectedTaskGids = [gid]
         pendingRevealGid = nil
+    }
+
+    private func checkPendingMagnetConfirm() {
+        guard let gid = taskStore.pendingMagnetConfirmGid else { return }
+        if let task = taskStore.tasks.first(where: { $0.gid == gid }) {
+            confirmTask = task
+            selectedTaskGids = [gid]
+            taskStore.pendingMagnetConfirmGid = nil
+        }
     }
 }
 

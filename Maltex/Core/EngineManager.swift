@@ -53,7 +53,7 @@ class EngineManager: ObservableObject {
 
         try? FileManager.default.createDirectory(
             at: userDataPath, withIntermediateDirectories: true)
-        stopPreviousManagedProcessIfNeeded()
+        stopPreviousManagedProcessIfNeeded(settings: settings)
 
         guard let binURL = resolveBinaryURL(settings: settings),
               FileManager.default.fileExists(atPath: binURL.path)
@@ -421,27 +421,31 @@ class EngineManager: ObservableObject {
         return true
     }
 
-    private func stopPreviousManagedProcessIfNeeded() {
-        guard let pidString = try? String(contentsOf: pidPath, encoding: .utf8)
+    private func stopPreviousManagedProcessIfNeeded(settings: SettingsStore? = nil) {
+        if let pidString = try? String(contentsOf: pidPath, encoding: .utf8)
             .trimmingCharacters(in: .whitespacesAndNewlines),
               let pid = Int32(pidString),
               pid > 0
-        else {
-            return
-        }
+        {
+            if kill(pid, 0) == 0 {
+                kill(pid, SIGTERM)
+                usleep(300_000)
 
-        guard kill(pid, 0) == 0 else {
+                if kill(pid, 0) == 0 {
+                    kill(pid, SIGKILL)
+                }
+            }
             removeManagedPID()
-            return
         }
 
-        kill(pid, SIGTERM)
-        usleep(300_000)
-
-        if kill(pid, 0) == 0 {
-            kill(pid, SIGKILL)
-        }
-        removeManagedPID()
+        // 清理可能残留的孤儿 aria2 进程（例如来自单元测试或异常崩溃，避免端口被占用导致启动失败）
+        let port = settings?.rpcPort ?? 16800
+        let pkill = Process()
+        pkill.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
+        pkill.arguments = ["-f", "aria2.*--rpc-listen-port=\(port)"]
+        try? pkill.run()
+        pkill.waitUntilExit()
+        usleep(200_000)
     }
 }
 

@@ -226,8 +226,52 @@ final class DownloadTaskTests: XCTestCase {
         let task = try JSONDecoder().decode(DownloadTask.self, from: json)
 
         XCTAssertEqual(task.errorCode, "22")
-        XCTAssertEqual(task.followedBy, "gid_followed")
+        XCTAssertEqual(task.followedBy, ["gid_followed"])
         XCTAssertEqual(task.belongsTo, "gid_parent")
+    }
+
+    func testDecodeFollowedByArray() throws {
+        let json = """
+        {
+            "gid": "meta001",
+            "status": "complete",
+            "totalLength": "0",
+            "completedLength": "0",
+            "uploadLength": "0",
+            "downloadSpeed": "0",
+            "uploadSpeed": "0",
+            "connections": "0",
+            "followedBy": ["gid_real_task_1", "gid_real_task_2"],
+            "dir": "/tmp",
+            "files": []
+        }
+        """.data(using: .utf8)!
+
+        let task = try JSONDecoder().decode(DownloadTask.self, from: json)
+        XCTAssertEqual(task.followedBy, ["gid_real_task_1", "gid_real_task_2"])
+    }
+
+    func testDuplicateDownloadInfoCanAutoRedownload() {
+        let magnetInfo = DuplicateDownloadInfo(
+            uri: "magnet:?xt=urn:btih:c12fe1c06bba254a9dc9f519b335380dc1f7fed4&dn=Test",
+            options: [:],
+            torrentBase64: nil
+        )
+        XCTAssertTrue(magnetInfo.canAutoRedownload)
+
+        let torrentInfo = DuplicateDownloadInfo(
+            uri: "",
+            options: [:],
+            torrentBase64: "dGVzdA=="
+        )
+        XCTAssertFalse(torrentInfo.canAutoRedownload)
+
+        let httpInfo = DuplicateDownloadInfo(
+            uri: "https://example.com/file.zip",
+            options: [:],
+            torrentBase64: nil
+        )
+        XCTAssertFalse(httpInfo.canAutoRedownload)
     }
 
     func testTaskErrorMessageAndLocalizedDescription() throws {

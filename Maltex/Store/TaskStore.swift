@@ -23,6 +23,20 @@ struct Aria2RPCError: Codable {
     let message: String
 }
 
+/// 重复下载检测信息：当 aria2 报告 "Same info hash already exists" 时保存上下文，
+/// 用于向用户展示确认弹窗并支持强制重新下载。
+struct DuplicateDownloadInfo: Identifiable {
+    let id = UUID()
+    let uri: String
+    let options: [String: String]
+    let torrentBase64: String?
+
+    /// 是否可以自动重下载（仅磁力链接可从 URI 提取 info hash 用于定位旧任务）。
+    var canAutoRedownload: Bool {
+        torrentBase64 == nil && uri.lowercased().hasPrefix("magnet:")
+    }
+}
+
 @MainActor
 class TaskStore: ObservableObject {
     @Published var tasks: [DownloadTask] = []
@@ -30,6 +44,14 @@ class TaskStore: ObservableObject {
     @Published var lastError: String?
     @Published var shouldPresentEngineError = false
     @Published var lastAddedGid: String?
+
+    // Bug 1: 磁力链接元数据下载完成后，派生下载任务准备弹出确认弹窗的 GID
+    @Published var pendingMagnetConfirmGid: String?
+    // Bug 2: 重复下载检测后待用户确认的下载信息
+    @Published var pendingDuplicateDownload: DuplicateDownloadInfo?
+
+    // Bug 1: 正在等待元数据下载的磁力链接元数据任务 GID 集合
+    private var pendingMagnetMetadataGids: Set<String> = []
 
     /// 当前所有正在下载任务的实时下载速度之和（字节/秒），用于 Dock 图标等聚合展示。
     var totalDownloadSpeed: Int64 {
@@ -332,6 +354,7 @@ class TaskStore: ObservableObject {
         method: Aria2Method,
         params: [AnyEncodable],
         failureFormat: String.LocalizationValue,
+        onRPCError: (@MainActor @Sendable (Aria2RPCError) -> Bool)? = nil,
         onGid: (@MainActor @Sendable (String) -> Void)? = nil
     ) {
         aria2.call(method: method, params: params)
@@ -357,6 +380,10 @@ class TaskStore: ObservableObject {
                             let error = rpcResponse.error
                         {
                             print("[TaskStore] RPC Error: \(error.message)")
+                            // 优先让调用方处理特定 RPC 错误（如重复下载检测）
+                            if let onRPCError, onRPCError(error) {
+                                return
+                            }
                             self.isConnected = false
                             self.lastError = String(
                                 format: String(localized: failureFormat), error.message)
@@ -453,6 +480,34 @@ class TaskStore: ObservableObject {
 
             if isDownloadComplete && !historyStore.contains(gid: gid) {
                 historyStore.add(currentEngineTasks[index])
+            }
+        }
+
+        // 3. 检测磁力链接元数据下载完成后的派生任务
+        if !pendingMagnetMetadataGids.isEmpty {
+            var confirmedMetaGids: Set<String> = []
+
+            for task in currentEngineTasks {
+                // 通过 belongsTo 追踪：派生任务的 belongsTo 指向元数据任务 GID
+                guard let parentGid = task.belongsTo,
+                      pendingMagnetMetadataGids.contains(parentGid),
+                      task.bittorrent != nil,
+                      !task.files.isEmpty
+                else { continue }
+
+                // 暂停派生任务并通知 UI 弹出确认弹窗
+                aria2.call(method: .forcePause, params: [AnyEncodable(task.gid)])
+                    .response { _ in }
+                pendingMagnetConfirmGid = task.gid
+                confirmedMetaGids.insert(parentGid)
+            }
+
+            pendingMagnetMetadataGids.subtract(confirmedMetaGids)
+
+            // 清理已出错或已消失的元数据任务
+            pendingMagnetMetadataGids = pendingMagnetMetadataGids.filter { metaGid in
+                guard let task = engineTasksMap[metaGid] else { return false }
+                return task.status != .error
             }
         }
 
@@ -558,16 +613,16 @@ class TaskStore: ObservableObject {
         for uri in uris {
             enqueueAction { [weak self] in
                 guard let self else { return }
-                var currentOptions = options
-                if !settings.btAutoStart && uri.lowercased().hasPrefix("magnet:") {
-                    currentOptions["pause"] = "true"
-                }
-                await self.addSingleUri(uri, options: currentOptions)
+                let isMagnet = uri.lowercased().hasPrefix("magnet:")
+                // 磁力链接不再传 pause=true（否则元数据无法下载），
+                // 改由 mergeTasks 在检测到派生任务后暂停并弹出确认弹窗。
+                let needsConfirm = isMagnet && !settings.btAutoStart
+                await self.addSingleUri(uri, options: options, isMagnetPendingConfirm: needsConfirm)
             }
         }
     }
 
-    private func addSingleUri(_ uri: String, options: [String: String]) async {
+    private func addSingleUri(_ uri: String, options: [String: String], isMagnetPendingConfirm: Bool = false) async {
         var params: [AnyEncodable] = [AnyEncodable([uri])]
         if !options.isEmpty {
             params.append(AnyEncodable(options))
@@ -576,10 +631,24 @@ class TaskStore: ObservableObject {
         performActionCall(
             method: .addUri,
             params: params,
-            failureFormat: "添加下载失败: %@"
-        ) { [weak self] gid in
-            self?.lastAddedGid = gid
-        }
+            failureFormat: "添加下载失败: %@",
+            onRPCError: { [weak self] error in
+                guard let self else { return false }
+                if error.message.lowercased().contains("same info hash") {
+                    self.pendingDuplicateDownload = DuplicateDownloadInfo(
+                        uri: uri, options: options, torrentBase64: nil)
+                    return true
+                }
+                return false
+            },
+            onGid: { [weak self] gid in
+                guard let self else { return }
+                if isMagnetPendingConfirm {
+                    self.pendingMagnetMetadataGids.insert(gid)
+                }
+                self.lastAddedGid = gid
+            }
+        )
 
         // 给一个最小节奏，避免对单线程 RPC 形成瞬时洪峰
         try? await Task.sleep(nanoseconds: 50_000_000)
@@ -622,13 +691,24 @@ class TaskStore: ObservableObject {
                 params.append(AnyEncodable(options))
             }
 
+            let base64Torrent = data.base64EncodedString()
             self.performActionCall(
                 method: .addTorrent,
                 params: params,
-                failureFormat: "添加下载失败: %@"
-            ) { gid in
-                self.lastAddedGid = gid
-            }
+                failureFormat: "添加下载失败: %@",
+                onRPCError: { [weak self] error in
+                    guard let self else { return false }
+                    if error.message.lowercased().contains("same info hash") {
+                        self.pendingDuplicateDownload = DuplicateDownloadInfo(
+                            uri: "", options: options, torrentBase64: base64Torrent)
+                        return true
+                    }
+                    return false
+                },
+                onGid: { [weak self] gid in
+                    self?.lastAddedGid = gid
+                }
+            )
         }
     }
 
@@ -882,5 +962,79 @@ class TaskStore: ObservableObject {
                 Task { @MainActor in self?.fetchTasks() }
             }
         }
+    }
+
+    // MARK: - Bug 1: Magnet Link Helpers
+
+    /// 检查指定 GID 是否为正在等待元数据下载的磁力链接任务。
+    func isPendingMagnetMetadata(gid: String) -> Bool {
+        pendingMagnetMetadataGids.contains(gid)
+    }
+
+    // MARK: - Bug 2: Duplicate Download Helpers
+
+    /// 从磁力链接 URI 中提取 info hash。
+    private func extractInfoHash(from magnetURI: String) -> String? {
+        guard magnetURI.lowercased().hasPrefix("magnet:") else { return nil }
+        // 手动解析 xt 参数，URLComponents 对 magnet: 协议解析不可靠
+        let components = magnetURI.components(separatedBy: "&")
+        for component in components {
+            let part = component.contains("?") ? component.components(separatedBy: "?").last ?? component : component
+            if part.lowercased().hasPrefix("xt=urn:btih:") {
+                return String(part.dropFirst("xt=urn:btih:".count)).lowercased()
+            }
+        }
+        return nil
+    }
+
+    /// 删除与待重下载信息冲突的已有任务后重新添加下载。
+    func forceRedownload() {
+        guard let info = pendingDuplicateDownload else { return }
+        pendingDuplicateDownload = nil
+
+        let hash = extractInfoHash(from: info.uri)
+
+        // 查找已有的同 info hash 任务
+        let existingGid: String? = {
+            guard let hash else { return nil }
+            return tasks.first(where: {
+                $0.infoHash?.lowercased() == hash
+            })?.gid
+        }()
+
+        guard let gid = existingGid else {
+            // 无法定位旧任务（种子文件的 hash 无法从客户端提取），提示用户手动处理
+            lastError = String(localized: "与现有下载任务冲突（相同内容），请先删除已有任务再重新添加。")
+            shouldPresentEngineError = true
+            return
+        }
+
+        // 移除旧任务后重新添加
+        removeTasks(gids: [gid])
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+            guard let self else { return }
+            if let torrentData = info.torrentBase64 {
+                self.readdTorrent(base64: torrentData, options: info.options)
+            } else {
+                self.addUri([info.uri])
+            }
+        }
+    }
+
+    /// 使用 base64 编码的种子数据重新添加下载任务。
+    private func readdTorrent(base64 torrentBase64: String, options: [String: String]) {
+        var params: [AnyEncodable] = [AnyEncodable(torrentBase64)]
+        params.append(AnyEncodable([String]()))
+        if !options.isEmpty {
+            params.append(AnyEncodable(options))
+        }
+        performActionCall(
+            method: .addTorrent,
+            params: params,
+            failureFormat: "添加下载失败: %@",
+            onGid: { [weak self] gid in
+                self?.lastAddedGid = gid
+            }
+        )
     }
 }
