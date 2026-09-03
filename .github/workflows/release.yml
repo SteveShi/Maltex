@@ -151,17 +151,67 @@ jobs:
           # Ad-hoc sign x86_64 app deeply
           codesign --force --deep --sign - --options=runtime --entitlements Maltex/Maltex.entitlements Build/x86_64/Maltex.app
 
+      - name: Package Universal App
+        run: |
+          mkdir -p Build/Universal/Maltex.app
+          cp -R ./DerivedData/arm64/Build/Products/Release/Maltex.app/ Build/Universal/Maltex.app/
+          
+          # Merge main executables into universal
+          lipo -create \
+            DerivedData/arm64/Build/Products/Release/Maltex.app/Contents/MacOS/Maltex \
+            DerivedData/x86_64/Build/Products/Release/Maltex.app/Contents/MacOS/Maltex \
+            -output Build/Universal/Maltex.app/Contents/MacOS/Maltex
+          
+          # Merge Safari extension into universal
+          lipo -create \
+            "DerivedData/arm64/Build/Products/Release/Maltex.app/Contents/PlugIns/Maltex Extension.appex/Contents/MacOS/Maltex Extension" \
+            "DerivedData/x86_64/Build/Products/Release/Maltex.app/Contents/PlugIns/Maltex Extension.appex/Contents/MacOS/Maltex Extension" \
+            -output "Build/Universal/Maltex.app/Contents/PlugIns/Maltex Extension.appex/Contents/MacOS/Maltex Extension"
+          
+          # Merge aria2c and aria2-next into universal
+          lipo -create \
+            extra/darwin/arm64/engine/aria2c \
+            extra/darwin/x64/engine/aria2c \
+            -output Build/Universal/Maltex.app/Contents/Resources/aria2c
+            
+          lipo -create \
+            extra/darwin/arm64/engine/aria2-next \
+            extra/darwin/x64/engine/aria2-next \
+            -output Build/Universal/Maltex.app/Contents/Resources/aria2-next
+            
+          cp extra/darwin/arm64/engine/aria2.conf Build/Universal/Maltex.app/Contents/Resources/aria2.conf
+          chmod +x Build/Universal/Maltex.app/Contents/Resources/aria2c Build/Universal/Maltex.app/Contents/Resources/aria2-next
+          
+          # Ad-hoc sign Universal app deeply
+          codesign --force --deep --sign - --options=runtime --entitlements Maltex/Maltex.entitlements Build/Universal/Maltex.app
+
       - name: Create DMGs and ZIPs
         id: create_assets
         run: |
           VERSION=${{ env.VERSION }}
           
-          # 1. arm64 ZIP
+          # 1. Universal ZIP & DMG
+          cd Build/Universal
+          zip -qy -r "../../Maltex-${VERSION}-universal.zip" "Maltex.app"
+          cd -
+
+          create-dmg \
+            --volname "Maltex Installer (Universal)" \
+            --volicon "Maltex/Assets.xcassets/AppIcon.appiconset/icon.png" \
+            --window-pos 200 120 \
+            --window-size 800 400 \
+            --icon-size 100 \
+            --icon "Maltex.app" 200 190 \
+            --hide-extension "Maltex.app" \
+            --app-drop-link 600 185 \
+            "Maltex-${VERSION}-universal.dmg" \
+            "Build/Universal/Maltex.app"
+
+          # 2. arm64 ZIP & DMG
           cd Build/arm64
           zip -qy -r "../../Maltex-${VERSION}-arm64.zip" "Maltex.app"
           cd -
 
-          # 2. arm64 DMG
           create-dmg \
             --volname "Maltex Installer (Apple Silicon)" \
             --volicon "Maltex/Assets.xcassets/AppIcon.appiconset/icon.png" \
@@ -174,12 +224,11 @@ jobs:
             "Maltex-${VERSION}-arm64.dmg" \
             "Build/arm64/Maltex.app"
 
-          # 3. x86_64 ZIP
+          # 3. x86_64 ZIP & DMG
           cd Build/x86_64
           zip -qy -r "../../Maltex-${VERSION}-x86_64.zip" "Maltex.app"
           cd -
 
-          # 4. x86_64 DMG
           create-dmg \
             --volname "Maltex Installer (Intel)" \
             --volicon "Maltex/Assets.xcassets/AppIcon.appiconset/icon.png" \
@@ -225,8 +274,7 @@ jobs:
           fi
 
           mkdir -p deploy
-          cp "$GITHUB_WORKSPACE/Maltex-${VERSION}-arm64.zip" deploy/
-          cp "$GITHUB_WORKSPACE/Maltex-${VERSION}-x86_64.zip" deploy/
+          cp "$GITHUB_WORKSPACE/Maltex-${VERSION}-universal.zip" deploy/
           cp release_notes_en.md "deploy/release_notes_en.md"
           cp release_notes_zh.md "deploy/release_notes_zh.md"
           cp release_notes_en.md "deploy/release_notes.md"
@@ -265,6 +313,8 @@ jobs:
           prerelease: false
           body_path: release_notes.md
           files: |
+            Maltex-*-universal.zip
+            Maltex-*-universal.dmg
             Maltex-*-arm64.zip
             Maltex-*-arm64.dmg
             Maltex-*-x86_64.zip
