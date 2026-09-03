@@ -608,6 +608,7 @@ class TaskStore: ObservableObject {
             options["dir"] = targetDir
         }
 
+        let btAutoStart = settings.btAutoStart
         // 每个 URL 串行发送 addUri 请求：aria2 是单线程 RPC，
         // 串行化既能避免并发风暴，也能保证 lastAddedGid 的语义正确。
         for uri in uris {
@@ -616,7 +617,7 @@ class TaskStore: ObservableObject {
                 let isMagnet = uri.lowercased().hasPrefix("magnet:")
                 // 磁力链接不再传 pause=true（否则元数据无法下载），
                 // 改由 mergeTasks 在检测到派生任务后暂停并弹出确认弹窗。
-                let needsConfirm = isMagnet && !settings.btAutoStart
+                let needsConfirm = isMagnet && !btAutoStart
                 await self.addSingleUri(uri, options: options, isMagnetPendingConfirm: needsConfirm)
             }
         }
