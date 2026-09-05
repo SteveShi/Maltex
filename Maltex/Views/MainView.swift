@@ -10,12 +10,17 @@ struct MainView: View {
     @State private var selectedTaskGids: Set<String> = []
     @State private var confirmTask: DownloadTask? = nil
     @State private var pendingRevealGid: String? = nil
+    @State private var isInspectorPresented = false
+    @State private var inspectorTaskGid: String? = nil
     @EnvironmentObject var taskStore: TaskStore
     @EnvironmentObject var settings: SettingsStore
     @StateObject private var engine = EngineManager.shared
 
     var body: some View {
-        NavigationSplitView { sidebarView } detail: { detailView }
+        NavigationSplitView {
+            sidebarView
+                .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 260)
+        } detail: { detailView }
         .background(VisualEffectView(material: .hudWindow, blendingMode: .behindWindow).ignoresSafeArea())
         .sheet(isPresented: $isShowingAddTask) {
             AddTaskView()
@@ -83,6 +88,23 @@ struct MainView: View {
         .onChange(of: selection) {
             withAnimation(.spring()) {
                 selectedTaskGids.removeAll()
+            }
+        }
+        .onChange(of: selectedTaskGids) {
+            let shouldShow = selectedTaskGids.count == 1
+            let newGid = shouldShow ? selectedTaskGids.first : nil
+            if shouldShow != isInspectorPresented || newGid != inspectorTaskGid {
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    isInspectorPresented = shouldShow
+                    inspectorTaskGid = newGid
+                }
+            }
+        }
+        .onChange(of: isInspectorPresented) {
+            // User closed the inspector via system gesture (e.g. drag divider)
+            if !isInspectorPresented && !selectedTaskGids.isEmpty {
+                selectedTaskGids.removeAll()
+                inspectorTaskGid = nil
             }
         }
         .frame(minWidth: 900, minHeight: 600)
@@ -260,29 +282,25 @@ struct MainView: View {
                 ContentUnavailableView("请选择一个分类", systemImage: "sidebar.left")
             }
         }
-        .inspector(isPresented: inspectorBinding) {
-            if let detailTask = selectedDetailTask {
-                TaskDetailView(task: detailTask) {
-                    withAnimation(.spring()) {
-                        selectedTaskGids.removeAll()
+        .inspector(isPresented: $isInspectorPresented) {
+            Group {
+                if let detailTask = inspectorTask {
+                    TaskDetailView(task: detailTask) {
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            selectedTaskGids.removeAll()
+                        }
                     }
+                } else {
+                    Color.clear
                 }
-                .inspectorColumnWidth(min: 280, ideal: 350, max: 450)
             }
+            .inspectorColumnWidth(min: 280, ideal: 350, max: 450)
         }
     }
 
-    private var inspectorBinding: Binding<Bool> {
-        Binding(
-            get: { selectedDetailTask != nil },
-            set: { newValue in
-                if !newValue {
-                    withAnimation(.spring()) {
-                        selectedTaskGids.removeAll()
-                    }
-                }
-            }
-        )
+    private var inspectorTask: DownloadTask? {
+        guard let gid = inspectorTaskGid else { return nil }
+        return taskStore.tasks.first(where: { $0.gid == gid })
     }
 
     private var selectedDetailTask: DownloadTask? {
