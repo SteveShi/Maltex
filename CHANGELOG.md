@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.2] - 2026-09-06
+
+### Fixed
+- Fixed a visual glitch where opening the task detail Inspector panel caused the sidebar to rapidly collapse and reopen, producing jarring animation artifacts.
+
+---
+
+### Chinese
+### 修复
+- 修复打开任务详情面板时侧边栏快速缩回再展开的不自然动画问题。
+
+---
+
 ## [1.2.1] - 2026-09-03
 
 ### Added

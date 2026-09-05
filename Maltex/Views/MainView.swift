@@ -34,8 +34,10 @@ struct MainView: View {
             isShowingWhatsNew = true
         }
         .task {
-            if lastPresentedWhatsNewVersion != "1.2.1" {
-                lastPresentedWhatsNewVersion = "1.2.1"
+            // 1.2.2 is a patch fix only; WhatsNew content remains for 1.2.1
+            let whatsNewVersion = "1.2.1"
+            if lastPresentedWhatsNewVersion != whatsNewVersion {
+                lastPresentedWhatsNewVersion = whatsNewVersion
                 isShowingWhatsNew = true
             }
         }
