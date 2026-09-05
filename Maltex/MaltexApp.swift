@@ -4,6 +4,7 @@ import AppKit
 extension Notification.Name {
     static let maltexOpenFileURL = Notification.Name("maltex.openFileURL")
     static let maltexShowWhatsNew = Notification.Name("maltex.showWhatsNew")
+    static let maltexToggleInspector = Notification.Name("maltex.toggleInspector")
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -72,10 +73,8 @@ struct MaltexApp: App {
                 .onWindow { window in
                     guard let window = window else { return }
                     window.titlebarAppearsTransparent = true
-                    window.styleMask.insert(NSWindow.StyleMask.fullSizeContentView)
-                    window.isOpaque = false
-                    window.backgroundColor = .clear
-                    // Ensure the toolbar/titlebar buttons are still usable but blend in
+                    window.styleMask.insert(.fullSizeContentView)
+                    window.minSize = NSSize(width: 850, height: 520)
                 }
                 .task {
                     guard !didRunLaunchTasks else { return }
@@ -97,6 +96,12 @@ struct MaltexApp: App {
                 Button(LocalizedStringKey("新功能介绍...")) {
                     NotificationCenter.default.post(name: .maltexShowWhatsNew, object: nil)
                 }
+            }
+            CommandGroup(after: .windowList) {
+                Button(String(localized: "显示任务详情")) {
+                    NotificationCenter.default.post(name: .maltexToggleInspector, object: nil)
+                }
+                .keyboardShortcut("i", modifiers: .command)
             }
         }
 

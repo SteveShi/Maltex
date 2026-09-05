@@ -15,3 +15,5 @@
 .agent/
 _agents/
 skills/
+DerivedData/
+Build/

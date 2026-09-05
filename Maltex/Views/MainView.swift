@@ -10,8 +10,7 @@ struct MainView: View {
     @State private var selectedTaskGids: Set<String> = []
     @State private var confirmTask: DownloadTask? = nil
     @State private var pendingRevealGid: String? = nil
-    @State private var isInspectorPresented = false
-    @State private var inspectorTaskGid: String? = nil
+    @State private var isInspectorPresented: Bool = false
     @EnvironmentObject var taskStore: TaskStore
     @EnvironmentObject var settings: SettingsStore
     @StateObject private var engine = EngineManager.shared
@@ -19,8 +18,27 @@ struct MainView: View {
     var body: some View {
         NavigationSplitView {
             sidebarView
-                .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 260)
-        } detail: { detailView }
+                .navigationSplitViewColumnWidth(ideal: 200, max: 260)
+        } detail: {
+            HStack(spacing: 0) {
+                detailView
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                if isInspectorPresented {
+                    Divider()
+
+                    TaskDetailSidebarView(
+                        task: selectedDetailTask,
+                        onClose: {
+                            withAnimation(.easeInOut(duration: 0.22)) {
+                                isInspectorPresented = false
+                            }
+                        }
+                    )
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
+                }
+            }
+        }
         .background(VisualEffectView(material: .hudWindow, blendingMode: .behindWindow).ignoresSafeArea())
         .sheet(isPresented: $isShowingAddTask) {
             AddTaskView()
@@ -93,23 +111,17 @@ struct MainView: View {
             }
         }
         .onChange(of: selectedTaskGids) {
-            let shouldShow = selectedTaskGids.count == 1
-            let newGid = shouldShow ? selectedTaskGids.first : nil
-            if shouldShow != isInspectorPresented || newGid != inspectorTaskGid {
-                withAnimation(.easeInOut(duration: 0.25)) {
-                    isInspectorPresented = shouldShow
-                    inspectorTaskGid = newGid
+            if selectedTaskGids.count == 1 {
+                withAnimation(.easeInOut(duration: 0.22)) {
+                    isInspectorPresented = true
                 }
             }
         }
-        .onChange(of: isInspectorPresented) {
-            // User closed the inspector via system gesture (e.g. drag divider)
-            if !isInspectorPresented && !selectedTaskGids.isEmpty {
-                selectedTaskGids.removeAll()
-                inspectorTaskGid = nil
+        .onReceive(NotificationCenter.default.publisher(for: .maltexToggleInspector)) { _ in
+            withAnimation(.easeInOut(duration: 0.22)) {
+                isInspectorPresented.toggle()
             }
         }
-        .frame(minWidth: 900, minHeight: 600)
         .alert("引擎错误", isPresented: engineAlertBinding) {
             Button("重试") {
                 taskStore.lastError = nil
@@ -174,62 +186,59 @@ struct MainView: View {
 
     @ViewBuilder
     private var sidebarView: some View {
-        VStack(spacing: 0) {
-            List(selection: $selection) {
-                Section("下载状态") {
-                    NavigationLink(value: "all") {
-                        Label("所有任务", systemImage: "tray.2")
-                    }
-                    NavigationLink(value: "downloading") {
-                        Label("正在下载", systemImage: "arrow.down.circle")
-                    }
-                    NavigationLink(value: "uploading") {
-                        Label("正在上传", systemImage: "arrow.up.circle")
-                    }
-                    NavigationLink(value: "waiting") {
-                        Label("等待下载", systemImage: "clock")
-                    }
-                    NavigationLink(value: "paused") {
-                        Label("已暂停", systemImage: "pause.circle")
-                    }
-                    NavigationLink(value: "stopped") {
-                        Label("已停止", systemImage: "stop.circle")
-                    }
-                    NavigationLink(value: "completed") {
-                        Label("已完成", systemImage: "checkmark.circle")
+        List(selection: $selection) {
+            Section("下载状态") {
+                Label("所有任务", systemImage: "tray.2")
+                    .tag("all")
+                Label("正在下载", systemImage: "arrow.down.circle")
+                    .tag("downloading")
+                Label("正在上传", systemImage: "arrow.up.circle")
+                    .tag("uploading")
+                Label("等待下载", systemImage: "clock")
+                    .tag("waiting")
+                Label("已暂停", systemImage: "pause.circle")
+                    .tag("paused")
+                Label("已停止", systemImage: "stop.circle")
+                    .tag("stopped")
+                Label("已完成", systemImage: "checkmark.circle")
+                    .tag("completed")
+            }
+        }
+        .listStyle(.sidebar)
+        .scrollContentBackground(.hidden)
+        .frame(minWidth: 0, maxWidth: .infinity)
+        .safeAreaInset(edge: .bottom) {
+            VStack(spacing: 0) {
+                Divider()
+
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(sidebarStatusColor)
+                        .frame(width: 7, height: 7)
+                    Text(sidebarStatusText)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                    Spacer()
+                    if sidebarStatus == .error {
+                        Button {
+                            taskStore.lastError = nil
+                            taskStore.shouldPresentEngineError = false
+                            EngineManager.shared.restart(settings: settings)
+                            taskStore.reconnectToConfiguredRPCAfterEngineRestart()
+                        } label: {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                        .help(Text("重启内核"))
                     }
                 }
+                .frame(minWidth: 0, maxWidth: .infinity)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
             }
-            .listStyle(.sidebar)
-            .scrollContentBackground(.hidden)
-
-            Divider()
-
-            HStack(spacing: 6) {
-                Circle()
-                    .fill(sidebarStatusColor)
-                    .frame(width: 7, height: 7)
-                Text(sidebarStatusText)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Spacer()
-                if sidebarStatus == .error {
-                    Button {
-                        taskStore.lastError = nil
-                        taskStore.shouldPresentEngineError = false
-                        EngineManager.shared.restart(settings: settings)
-                        taskStore.reconnectToConfiguredRPCAfterEngineRestart()
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
-                    .help(Text("重启内核"))
-                }
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
         }
     }
 
@@ -278,31 +287,13 @@ struct MainView: View {
                 TaskListView(
                     status: selection,
                     selectedTaskGids: $selectedTaskGids,
-                    isShowingAddTask: $isShowingAddTask
+                    isShowingAddTask: $isShowingAddTask,
+                    isInspectorPresented: $isInspectorPresented
                 )
             } else {
                 ContentUnavailableView("请选择一个分类", systemImage: "sidebar.left")
             }
         }
-        .inspector(isPresented: $isInspectorPresented) {
-            Group {
-                if let detailTask = inspectorTask {
-                    TaskDetailView(task: detailTask) {
-                        withAnimation(.easeInOut(duration: 0.25)) {
-                            selectedTaskGids.removeAll()
-                        }
-                    }
-                } else {
-                    Color.clear
-                }
-            }
-            .inspectorColumnWidth(min: 280, ideal: 350, max: 450)
-        }
-    }
-
-    private var inspectorTask: DownloadTask? {
-        guard let gid = inspectorTaskGid else { return nil }
-        return taskStore.tasks.first(where: { $0.gid == gid })
     }
 
     private var selectedDetailTask: DownloadTask? {
@@ -360,7 +351,11 @@ struct VisualEffectView: NSViewRepresentable {
     }
 
     func updateNSView(_ visualEffectView: NSVisualEffectView, context: Context) {
-        visualEffectView.material = material
-        visualEffectView.blendingMode = blendingMode
+        if visualEffectView.material != material {
+            visualEffectView.material = material
+        }
+        if visualEffectView.blendingMode != blendingMode {
+            visualEffectView.blendingMode = blendingMode
+        }
     }
 }

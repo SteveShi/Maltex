@@ -5,13 +5,15 @@ All notable changes to this project will be documented in this file.
 ## [1.2.2] - 2026-09-06
 
 ### Fixed
-- Fixed a visual glitch where opening the task detail Inspector panel caused the sidebar to rapidly collapse and reopen, producing jarring animation artifacts.
+- Fixed an issue where inspecting task details caused the left navigation sidebar to rapidly collapse, jitter, or distort layout. Migrated to an integrated right trailing inspector panel (Pages style) that smoothly slides out when clicking a task.
+- Fixed an animation stutter where the left navigation sidebar hitched halfway during expanding/sliding out.
 
 ---
 
 ### Chinese
 ### 修复
-- 修复打开任务详情面板时侧边栏快速缩回再展开的不自然动画问题。
+- 修复查看任务详情时左侧侧边栏快速抽搐折叠或内边距变形的问题，改为内嵌式右侧详情栏（Pages 风格），点击下载任务时平滑自动滑出。
+- 修复左侧导航侧边栏在展开划出至半程时出现卡顿停滞的动画问题。
 
 ---
 

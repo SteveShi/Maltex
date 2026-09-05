@@ -5,6 +5,7 @@ struct TaskListView: View {
     let status: String
     @Binding var selectedTaskGids: Set<String>
     @Binding var isShowingAddTask: Bool
+    @Binding var isInspectorPresented: Bool
     @EnvironmentObject var taskStore: TaskStore
     @State private var pendingDeleteGids: Set<String> = []
     @State private var showDeleteConfirm = false
@@ -120,10 +121,27 @@ struct TaskListView: View {
 
                                 Divider()
 
+                                Button {
+                                    selectedTaskGids = [task.gid]
+                                    withAnimation(.easeInOut(duration: 0.22)) {
+                                        isInspectorPresented = true
+                                    }
+                                } label: {
+                                    Label(String(localized: "显示任务详情"), systemImage: "info.circle")
+                                }
+
+                                Divider()
+
                                 Button(role: .destructive) {
                                     requestDelete([task.gid])
                                 } label: {
                                     Label(String(localized: "删除"), systemImage: "trash.fill")
+                                }
+                            }
+                            .onTapGesture(count: 2) {
+                                selectedTaskGids = [task.gid]
+                                withAnimation(.easeInOut(duration: 0.22)) {
+                                    isInspectorPresented = true
                                 }
                             }
                     }
@@ -183,6 +201,18 @@ struct TaskListView: View {
                     Label(String(localized: "新建任务"), systemImage: "plus")
                 }
                 .help(String(localized: "创建新下载任务"))
+
+                Button(action: {
+                    withAnimation(.easeInOut(duration: 0.22)) {
+                        isInspectorPresented.toggle()
+                    }
+                }) {
+                    Label(
+                        String(localized: "任务详情"),
+                        systemImage: isInspectorPresented ? "info.circle.fill" : "info.circle"
+                    )
+                }
+                .help(String(localized: "显示任务详情 (⌘I)"))
 
                 Button(action: { taskStore.fetchTasks() }) {
                     Label(String(localized: "刷新"), systemImage: "arrow.clockwise")
